@@ -22,6 +22,7 @@ namespace BookStore.Services
                 FirstName = userDTO.FirstName,
                 LastName = userDTO.LastName,
                 ContactNumber = userDTO.ContactNumber, 
+                MembershipId = userDTO.MembershipId
             };
 
             var result = await _userManager.CreateAsync(newUser, userDTO.Password);
@@ -43,18 +44,21 @@ namespace BookStore.Services
         public async Task<bool> UserLogin(LoginDTO loginCredential)
         {
             var user = await isUserExist(loginCredential.Email);
-            if (user == null)
+
+            if (user != null)
             {
                 var isAuthenticated = await _userManager
                     .CheckPasswordAsync(user, loginCredential.Password);
+
                 if (isAuthenticated)
                 {
                     return true;
                 }
-
             }
+
             return false;
         }
+
 
         private async Task<Users> isUserExist(string email)
         {

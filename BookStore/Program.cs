@@ -2,6 +2,7 @@ using BookStore.Entities;
 using BookStore.Services;
 using BookStore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,7 +23,28 @@ var jwtConfig = builder.Configuration.GetSection(JwtOptions.SectionName);
 
 builder.Services.AddOptions<JwtOptions>()
 .Bind(jwtConfig)
-.ValidateDataAnnotations(); 
+.ValidateDataAnnotations();
+
+builder.Services.AddAuthentication().AddJwtBearer(options =>
+{
+    var jwtOptions = jwtConfig.Get<JwtOptions>()!;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = jwtOptions.Issuer,
+
+        ValidateAudience = true,
+        ValidAudience = jwtOptions.Audience,
+
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = jwtOptions.SymmetricSecurityKey,
+
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+});
+builder.Services.AddAuthorization();
+
 
 var app = builder.Build();
 

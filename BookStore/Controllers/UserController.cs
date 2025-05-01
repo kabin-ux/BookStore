@@ -10,7 +10,7 @@ namespace BookStore.Controllers
     {
         private readonly IUserService _userService;
 
-        public UserController(UserService userService)
+        public UserController(IUserService userService)
         {
             _userService = userService;
         }
@@ -43,6 +43,7 @@ namespace BookStore.Controllers
         public async Task<IActionResult> Login([FromBody] LoginDTO loginCredential)
         {
             var isLoggedIn = await _userService.UserLogin(loginCredential);
+
 
             if (isLoggedIn)
             {

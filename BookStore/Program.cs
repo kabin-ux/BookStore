@@ -19,6 +19,9 @@ builder.Services.AddScoped<IBookService, BookService>();
 //builder.Services.AddScoped<IDiscountService, DiscountService>();
 builder.Services.AddIdentity<Users, Roles>().AddEntityFrameworkStores<ApplicationDBContext>();
 
+builder.Services.AddScoped<JwtTokenService>();
+
+
 var jwtConfig = builder.Configuration.GetSection(JwtOptions.SectionName);
 
 builder.Services.AddOptions<JwtOptions>()

@@ -41,23 +41,22 @@ namespace BookStore.Services
             }
         }
 
-        public async Task<bool> UserLogin(LoginDTO loginCredential)
+        public async Task<Users?> UserLogin(LoginDTO loginCredential)
         {
             var user = await isUserExist(loginCredential.Email);
 
             if (user != null)
             {
-                var isAuthenticated = await _userManager
-                    .CheckPasswordAsync(user, loginCredential.Password);
-
+                var isAuthenticated = await _userManager.CheckPasswordAsync(user, loginCredential.Password);
                 if (isAuthenticated)
                 {
-                    return true;
+                    return user;
                 }
             }
 
-            return false;
+            return null;
         }
+
 
 
         private async Task<Users> isUserExist(string email)

@@ -9,10 +9,13 @@ namespace BookStore.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly JwtTokenService _jwtTokenService;
 
-        public UserController(IUserService userService)
+
+        public UserController(IUserService userService, JwtTokenService jwtTokenService)
         {
             _userService = userService;
+            _jwtTokenService = jwtTokenService;
         }
 
         [HttpPost("register-user")]
@@ -42,12 +45,16 @@ namespace BookStore.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDTO loginCredential)
         {
-            var isLoggedIn = await _userService.UserLogin(loginCredential);
+            var user = await _userService.UserLogin(loginCredential);
 
-
-            if (isLoggedIn)
+            if (user != null)
             {
-                return Ok("Login successful.");
+                var token = await _jwtTokenService.GenerateUserToken(user);
+                return Ok(new
+                {
+                    Message = "Login successful.",
+                    Token = token
+                });
             }
 
             return Unauthorized("Invalid email or password.");

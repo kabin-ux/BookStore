@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BookStore.Entities
 {
-    public class Review
+    public class Reviews
     {
         [Key]
         public int ReviewId { get; set; }

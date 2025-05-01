@@ -34,7 +34,7 @@ namespace BookStore.Controllers
         }
 
         [HttpGet("search")]
-        public async Task<ActionResult<List<Books>>> SearchBooks([FromQuery] string search, [FromQuery] string sort, [FromQuery] string author, [FromQuery] int? year)
+        public async Task<ActionResult<List<Books>>> SearchBooks([FromQuery] string? search, [FromQuery] string? sort, [FromQuery] string? author, [FromQuery] int? year)
         {
             var books = await _bookService.SearchBooks(search, sort, author, year);
             return Ok(books);

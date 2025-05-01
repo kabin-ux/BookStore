@@ -60,7 +60,7 @@ namespace BookStore.Services
 
         public async Task<Books> AddBook(BookCreateUpdateDTO bookDTO)
         {
-            var book = new Books
+            var newBook = new Books
             {
                 Title = bookDTO.Title,
                 Author = bookDTO.Author,
@@ -74,9 +74,17 @@ namespace BookStore.Services
                 IsAvailable = bookDTO.IsAvailable
             };
 
-            _context.Books.Add(book);
-            await _context.SaveChangesAsync();
-            return book;
+            try
+            {
+                await _context.Books.AddAsync(newBook);
+                await _context.SaveChangesAsync();
+                return newBook;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error occurred while adding book: {ex.Message}");
+                return null;
+            }
         }
 
         public async Task<Books> UpdateBook(int id, BookCreateUpdateDTO bookDTO)

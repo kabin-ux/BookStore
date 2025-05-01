@@ -13,8 +13,16 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<ApplicationDBContext>(opt => opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IBookService, BookService>();
+//builder.Services.AddScoped<IDiscountService, DiscountService>();
 builder.Services.AddIdentity<Users, Roles>().AddEntityFrameworkStores<ApplicationDBContext>();
+
+var jwtConfig = builder.Configuration.GetSection(JwtOptions.SectionName);
+
+builder.Services.AddOptions<JwtOptions>()
+.Bind(jwtConfig)
+.ValidateDataAnnotations(); 
 
 var app = builder.Build();
 

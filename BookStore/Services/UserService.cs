@@ -45,7 +45,7 @@ namespace BookStore.Services
             }
         }
 
-        public async Task<string?> UserLogin(LoginDTO loginCredential)
+        public async Task<(string? token, Users? user, IList<string> roles)> UserLoginWithUserData(LoginDTO loginCredential)
         {
             var user = await isUserExist(loginCredential.Email);
             if (user != null)
@@ -53,10 +53,12 @@ namespace BookStore.Services
                 var isAuthenticated = await _userManager.CheckPasswordAsync(user, loginCredential.Password);
                 if (isAuthenticated)
                 {
-                    return await _jwtTokenService.GenerateUserToken(user);
+                    var token = await _jwtTokenService.GenerateUserToken(user);
+                    var roles = await _userManager.GetRolesAsync(user);
+                    return (token, user, roles);
                 }
             }
-            return null;
+            return (null, null, new List<string>());
         }
 
 

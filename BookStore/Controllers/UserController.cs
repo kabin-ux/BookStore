@@ -46,19 +46,31 @@ namespace BookStore.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDTO loginCredential)
         {
-            var token = await _userService.UserLogin(loginCredential);
+            var (token, user, roles) = await _userService.UserLoginWithUserData(loginCredential);
 
-            if (token != null)
+            if (token != null && user != null)
             {
                 return Ok(new
                 {
                     message = "Login successful.",
-                    token = token
+                    token = token,
+                    user = new
+                    {
+                        user.Id,
+                        user.UserName,
+                        user.Email,
+                        user.FirstName,
+                        user.LastName,
+                        user.ContactNumber,
+                        user.MembershipId,
+                        roles // pass roles array here
+                    }
                 });
             }
 
             return Unauthorized("Invalid email or password.");
         }
+
 
         [HttpGet("ping")]
         public IActionResult Ping() => Ok("User controller is reachable.");

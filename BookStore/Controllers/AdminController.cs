@@ -1,6 +1,11 @@
-﻿namespace BookStore.Controllers
+﻿using Microsoft.AspNetCore.Mvc;
+
+namespace BookStore.Controllers
 {
-    public class AdminController
+    [ApiController]
+    [Route("api/[controller]")]
+    public class AdminController: ControllerBase
     {
+
     }
 }

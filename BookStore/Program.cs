@@ -3,6 +3,7 @@ using BookStore.Services;
 using BookStore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,7 +18,12 @@ builder.Services.AddDbContext<ApplicationDBContext>(opt => opt.UseNpgsql(builder
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IBookService, BookService>();
 //builder.Services.AddScoped<IDiscountService, DiscountService>();
-builder.Services.AddIdentity<Users, Roles>().AddEntityFrameworkStores<ApplicationDBContext>();
+builder.Services.AddIdentity<Users, Roles>()
+    .AddRoles<Roles>()
+    .AddEntityFrameworkStores<ApplicationDBContext>()
+    .AddDefaultTokenProviders();
+
+
 
 builder.Services.AddScoped<JwtTokenService>();
 
@@ -49,7 +55,15 @@ builder.Services.AddAuthentication().AddJwtBearer(options =>
 builder.Services.AddAuthorization();
 
 
+
+
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    await RoleSeeder.SeedRoles(scope.ServiceProvider);
+}
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -58,7 +72,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+
 
 app.UseAuthorization();
 

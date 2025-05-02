@@ -1,5 +1,6 @@
 ﻿using BookStore.DTO;
 using BookStore.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookStore.Controllers
@@ -45,20 +46,31 @@ namespace BookStore.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDTO loginCredential)
         {
-            var user = await _userService.UserLogin(loginCredential);
+            var token = await _userService.UserLogin(loginCredential);
 
-            if (user != null)
+            if (token != null)
             {
-                var token = await _jwtTokenService.GenerateUserToken(user);
                 return Ok(new
                 {
-                    Message = "Login successful.",
-                    Token = token
+                    message = "Login successful.",
+                    token = token
                 });
             }
 
             return Unauthorized("Invalid email or password.");
         }
+
+
+        [Authorize(Roles = "User")]
+        [HttpGet("user-only")]
+        public IActionResult AdminEndpoint()
+        {
+            return Ok(new 
+            { 
+                message = "Hello User"
+            });
+        }
+
     }
 }
 

@@ -8,9 +8,12 @@ namespace BookStore.Services
     {
         private UserManager<Users> _userManager;
 
-        public UserService(UserManager<Users> userManager)
+        private readonly JwtTokenService _jwtTokenService;
+
+        public UserService(UserManager<Users> userManager, JwtTokenService jwtTokenService)
         {
             _userManager = userManager;
+            _jwtTokenService = jwtTokenService;
         }
 
         public async Task<bool> AddUser(UserRegisterDTO userDTO)
@@ -29,6 +32,7 @@ namespace BookStore.Services
 
             if (result.Succeeded)
             {
+                await _userManager.AddToRoleAsync(newUser, "User");
                 return true;
             }
             else
@@ -41,22 +45,19 @@ namespace BookStore.Services
             }
         }
 
-        public async Task<Users?> UserLogin(LoginDTO loginCredential)
+        public async Task<string?> UserLogin(LoginDTO loginCredential)
         {
             var user = await isUserExist(loginCredential.Email);
-
             if (user != null)
             {
                 var isAuthenticated = await _userManager.CheckPasswordAsync(user, loginCredential.Password);
                 if (isAuthenticated)
                 {
-                    return user;
+                    return await _jwtTokenService.GenerateUserToken(user);
                 }
             }
-
             return null;
         }
-
 
 
         private async Task<Users> isUserExist(string email)

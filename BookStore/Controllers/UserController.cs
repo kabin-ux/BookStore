@@ -60,16 +60,15 @@ namespace BookStore.Controllers
             return Unauthorized("Invalid email or password.");
         }
 
+        [HttpGet("ping")]
+        public IActionResult Ping() => Ok("User controller is reachable.");
+
 
         [Authorize(Roles = "User")]
-        [HttpGet("user-only")]
-        public IActionResult AdminEndpoint()
-        {
-            return Ok(new 
-            { 
-                message = "Hello User"
-            });
-        }
+        [HttpGet]
+        [Route("user-only")]
+        public IActionResult UserOnly() => Ok(new { message = "Hello User" });
+
 
     }
 }

@@ -54,10 +54,29 @@ builder.Services.AddAuthentication().AddJwtBearer(options =>
 });
 builder.Services.AddAuthorization();
 
+// Register CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:5173") // React dev server
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials(); // if you're sending cookies or tokens
+        });
+});
+
+
 
 
 
 var app = builder.Build();
+
+// Use CORS
+app.UseCors("AllowFrontend");
+
+app.UseHttpsRedirection();
 
 using (var scope = app.Services.CreateScope())
 {

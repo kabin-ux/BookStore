@@ -2,6 +2,7 @@
 using BookStore.Entities;
 using BookStore.Services;
 using Microsoft.AspNetCore.Mvc;
+using static BookStore.Services.BookService;
 
 namespace BookStore.Controllers
 {
@@ -34,11 +35,18 @@ namespace BookStore.Controllers
         }
 
         [HttpGet("search")]
-        public async Task<ActionResult<List<Books>>> SearchBooks([FromQuery] string? search, [FromQuery] string? sort, [FromQuery] string? author, [FromQuery] int? year)
+        public async Task<ActionResult<PagedResult<Books>>> SearchBooks(
+    [FromQuery] string? search,
+    [FromQuery] string? sort,
+    [FromQuery] string? author,
+    [FromQuery] string? genre,
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10)
         {
-            var books = await _bookService.SearchBooks(search, sort, author, year);
-            return Ok(books);
+            var result = await _bookService.SearchBooks(search, sort, author, genre, pageNumber, pageSize);
+            return Ok(result);
         }
+
 
         [HttpPost]
         public async Task<ActionResult<Books>> AddBook([FromBody] BookCreateUpdateDTO bookDTO)

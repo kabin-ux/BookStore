@@ -36,6 +36,7 @@ namespace BookStore.Services
             var roles = await userManager.GetRolesAsync(user);
             foreach (var role in roles)
             {
+                // Important: Use ClaimTypes.Role so that ASP.NET recognizes it for [Authorize(Roles = "User")]
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
 

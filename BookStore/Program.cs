@@ -1,104 +1,175 @@
-using BookStore.Entities;
+﻿using BookStore.Entities;
 using BookStore.Services;
-using BookStore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Identity;
+using Swashbuckle.AspNetCore.Filters;
+using Microsoft.OpenApi.Models;
+using BookStore;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ✅ Connection string
+var efConnectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
+builder.Services.AddDbContext<ApplicationDBContext>(options =>
+    options.UseNpgsql(efConnectionString));
 
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-builder.Services.AddDbContext<ApplicationDBContext>(opt => opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IBookService, BookService>();
-//builder.Services.AddScoped<IDiscountService, DiscountService>();
+// ✅ Identity
 builder.Services.AddIdentity<Users, Roles>()
-    .AddRoles<Roles>()
     .AddEntityFrameworkStores<ApplicationDBContext>()
     .AddDefaultTokenProviders();
 
-
-
+// ✅ Custom services
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IBookService, BookService>();
+builder.Services.AddScoped<IWhitelistService, WhitelistService>();
+builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<JwtTokenService>();
 
-
+// ✅ JWT Authentication
 var jwtConfig = builder.Configuration.GetSection(JwtOptions.SectionName);
+builder.Services.Configure<JwtOptions>(jwtConfig);
 
-builder.Services.AddOptions<JwtOptions>()
-.Bind(jwtConfig)
-.ValidateDataAnnotations();
-
-builder.Services.AddAuthentication().AddJwtBearer(options =>
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = "Bearer";
+    options.DefaultChallengeScheme = "Bearer";
+})
+.AddJwtBearer("Bearer", options =>
 {
     var jwtOptions = jwtConfig.Get<JwtOptions>()!;
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
         ValidIssuer = jwtOptions.Issuer,
-
         ValidateAudience = true,
         ValidAudience = jwtOptions.Audience,
-
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = jwtOptions.SymmetricSecurityKey,
-
         ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero
+        ClockSkew = TimeSpan.Zero,
+        RoleClaimType = ClaimTypes.Role
+    };
+
+    // ✅ Debug logging
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine("❌ JWT AUTHENTICATION FAILED");
+            Console.WriteLine(context.Exception.Message);
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            Console.WriteLine("✅ JWT TOKEN VALIDATED");
+            return Task.CompletedTask;
+        }
     };
 });
+
+
+
+
+
 builder.Services.AddAuthorization();
 
-// Register CORS policy
-builder.Services.AddCors(options =>
+// ✅ Swagger Setup with JWT Support
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
 {
-    options.AddPolicy("AllowFrontend",
-        policy =>
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "BookStore API",
+        Version = "v1",
+        Description = "API documentation for BookStore"
+    });
+
+    // ✅ Define security scheme (Bearer)
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "Enter 'Bearer' followed by your JWT.\nExample: Bearer eyJhbGci...",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT"
+    });
+
+    // ✅ Globally require Bearer for all secured endpoints
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
         {
-            policy.WithOrigins("http://localhost:5173") // React dev server
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials(); // if you're sending cookies or tokens
-        });
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] { }
+        }
+    });
+
+    // ✅ OPTIONAL: Remove this line for now to simplify debugging
+    // c.OperationFilter<SecurityRequirementsOperationFilter>();
 });
 
 
+// ✅ CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 
+// ✅ Controllers
+builder.Services.AddControllers();
 
-
+// ✅ Build app
 var app = builder.Build();
 
-// Use CORS
+// ✅ Middlewares
 app.UseCors("AllowFrontend");
-
 app.UseHttpsRedirection();
-
-using (var scope = app.Services.CreateScope())
+app.UseAuthentication();
+app.Use(async (context, next) =>
 {
-    await RoleSeeder.SeedRoles(scope.ServiceProvider);
-}
+    if (context.User.Identity?.IsAuthenticated == true)
+    {
+        Console.WriteLine("🔍 JWT Debug - Claims:");
+        foreach (var claim in context.User.Claims)
+        {
+            Console.WriteLine($"{claim.Type} = {claim.Value}");
+        }
+    }
+    await next();
+});
 
 
-// Configure the HTTP request pipeline.
+app.UseAuthorization();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+// ✅ Seed Roles (optional)
+using (var scope = app.Services.CreateScope())
+{
+    await RoleSeeder.SeedRoles(scope.ServiceProvider);
+}
 
-app.UseHttpsRedirection();
-
-app.UseAuthentication();
-
-
-app.UseAuthorization();
-
+// ✅ Map routes
 app.MapControllers();
 
 app.Run();

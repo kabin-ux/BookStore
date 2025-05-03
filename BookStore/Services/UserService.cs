@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace BookStore.Services
 {
-    public class UserService:IUserService
+    public class UserService : IUserService
     {
         private UserManager<Users> _userManager;
 
@@ -20,11 +20,11 @@ namespace BookStore.Services
         {
             var newUser = new Users
             {
-                UserName = userDTO.UserName, 
+                UserName = userDTO.UserName,
                 Email = userDTO.Email,
                 FirstName = userDTO.FirstName,
                 LastName = userDTO.LastName,
-                ContactNumber = userDTO.ContactNumber, 
+                ContactNumber = userDTO.ContactNumber,
                 MembershipId = userDTO.MembershipId
             };
 

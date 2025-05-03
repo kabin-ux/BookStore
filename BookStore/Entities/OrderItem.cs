@@ -9,9 +9,6 @@ namespace BookStore.Entities
         public int OrderItemId { get; set; }
 
         [Required]
-        public int Quantity { get; set; }
-
-        [Required]
         [ForeignKey("Order")]
         public int OrderId { get; set; }
         public Orders Order { get; set; }
@@ -20,5 +17,12 @@ namespace BookStore.Entities
         [ForeignKey("Book")]
         public int BookId { get; set; }
         public Books Book { get; set; }
+
+        [Required]
+        public int Quantity { get; set; }
+
+        [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Price { get; set; }
     }
 }

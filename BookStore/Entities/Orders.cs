@@ -13,7 +13,7 @@ namespace BookStore.Entities
         public DateTime OrderDate { get; set; }
 
         [Required]
-        public string Status { get; set; }
+        public string Status { get; set; }  // Can be: "Pending", "Completed", "Cancelled"
 
         [Required]
         public string ClaimCode { get; set; }
@@ -27,9 +27,15 @@ namespace BookStore.Entities
         [Required]
         public decimal FinalAmount { get; set; }
 
+        public DateTime? CancelledAt { get; set; }
+
+        public string? CancellationReason { get; set; }
+
         [Required]
         [ForeignKey("User")]
         public long UserId { get; set; }
         public Users User { get; set; }
+
+        public virtual ICollection<OrderItem> OrderItems { get; set; }
     }
 }

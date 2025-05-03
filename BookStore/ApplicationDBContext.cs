@@ -18,9 +18,8 @@ namespace BookStore
         public DbSet<Announcements> Announcements { get; set; }
         public DbSet<Reviews> Reviews { get; set; }
         public DbSet<Carts> Carts { get; set; }
+        public DbSet<CartItem> CartItems { get; set; }
         public DbSet<Whitelists> Whitelists { get; set; }
-
-
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -32,6 +31,22 @@ namespace BookStore
                        Name = "SuperAdmin"
                    }
                );
+
+            // Configure relationships
+            builder.Entity<Carts>()
+                .HasOne(c => c.User)
+                .WithMany()
+                .HasForeignKey(c => c.UserId);
+
+            builder.Entity<CartItem>()
+                .HasOne(ci => ci.Cart)
+                .WithMany(c => c.CartItems)
+                .HasForeignKey(ci => ci.CartId);
+
+            builder.Entity<CartItem>()
+                .HasOne(ci => ci.Book)
+                .WithMany()
+                .HasForeignKey(ci => ci.BookId);
         }
     }
 }

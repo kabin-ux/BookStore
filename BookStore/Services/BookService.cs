@@ -93,6 +93,25 @@ namespace BookStore.Services
 
         public async Task<Books> AddBook(BookCreateUpdateDTO bookDTO)
         {
+            string? imagePath = null;
+
+            if (bookDTO.Image != null && bookDTO.Image.Length > 0)
+            {
+                var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "books");
+                if (!Directory.Exists(folderPath))
+                    Directory.CreateDirectory(folderPath);
+
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(bookDTO.Image.FileName);
+                var fullPath = Path.Combine(folderPath, fileName);
+
+                using (var stream = new FileStream(fullPath, FileMode.Create))
+                {
+                    await bookDTO.Image.CopyToAsync(stream);
+                }
+
+                imagePath = $"/images/books/{fileName}";
+            }
+
             var newBook = new Books
             {
                 Title = bookDTO.Title,
@@ -104,7 +123,9 @@ namespace BookStore.Services
                 ISBN = bookDTO.ISBN,
                 StockQuantity = bookDTO.StockQuantity,
                 Price = bookDTO.Price,
-                IsAvailable = bookDTO.IsAvailable
+                IsAvailable = bookDTO.IsAvailable,
+                PublicationDate = bookDTO.PublicationDate.Date.AddHours(12), 
+                ImagePath = imagePath
             };
 
             try
@@ -128,6 +149,25 @@ namespace BookStore.Services
                 return null;
             }
 
+            string? imagePath = book.ImagePath;
+
+            if (bookDTO.Image != null && bookDTO.Image.Length > 0)
+            {
+                var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "books");
+                if (!Directory.Exists(folderPath))
+                    Directory.CreateDirectory(folderPath);
+
+                var fileName = Guid.NewGuid() + Path.GetExtension(bookDTO.Image.FileName);
+                var fullPath = Path.Combine(folderPath, fileName);
+
+                using (var stream = new FileStream(fullPath, FileMode.Create))
+                {
+                    await bookDTO.Image.CopyToAsync(stream);
+                }
+
+                imagePath = $"/images/books/{fileName}";
+            }
+
             book.Title = bookDTO.Title;
             book.Author = bookDTO.Author;
             book.Genre = bookDTO.Genre;
@@ -138,6 +178,8 @@ namespace BookStore.Services
             book.StockQuantity = bookDTO.StockQuantity;
             book.Price = bookDTO.Price;
             book.IsAvailable = bookDTO.IsAvailable;
+            book.PublicationDate = bookDTO.PublicationDate.Date.AddHours(12);
+            book.ImagePath = imagePath;
 
             await _context.SaveChangesAsync();
             return book;

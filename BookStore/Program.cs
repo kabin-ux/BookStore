@@ -169,6 +169,9 @@ using (var scope = app.Services.CreateScope())
     await RoleSeeder.SeedRoles(scope.ServiceProvider);
 }
 
+app.UseStaticFiles(); // Already present by default in templates
+
+
 // ✅ Map routes
 app.MapControllers();
 

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace BookStore.DTO
 {
@@ -33,5 +34,10 @@ namespace BookStore.DTO
 
         [Required]
         public bool IsAvailable { get; set; }
+
+        [Required]
+        public DateTime PublicationDate { get; set; }
+
+        public IFormFile? Image { get; set; }
     }
 }

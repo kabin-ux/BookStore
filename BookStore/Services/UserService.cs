@@ -32,7 +32,7 @@ namespace BookStore.Services
 
             if (result.Succeeded)
             {
-                await _userManager.AddToRoleAsync(newUser, "User");
+                await _userManager.AddToRoleAsync(newUser, "Member");
                 return true;
             }
             else

@@ -289,7 +289,20 @@ namespace BookStore.Migrations
                         new
                         {
                             Id = 1L,
-                            Name = "SuperAdmin"
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = 2L,
+                            Name = "Member",
+                            NormalizedName = "MEMBER"
+                        },
+                        new
+                        {
+                            Id = 3L,
+                            Name = "Staff",
+                            NormalizedName = "STAFF"
                         });
                 });
 
@@ -334,7 +347,6 @@ namespace BookStore.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("MembershipId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("NormalizedEmail")

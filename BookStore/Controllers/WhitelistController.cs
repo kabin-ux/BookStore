@@ -52,6 +52,7 @@ namespace BookStore.Controllers
             var list = await _whitelistService.GetMyWhitelistAsync(user);
             return Ok(list);
         }
+
         [HttpDelete("remove/{bookId}")]
         public async Task<IActionResult> RemoveFromWhitelist(int bookId)
         {

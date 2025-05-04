@@ -21,12 +21,7 @@ builder.Services.AddIdentity<Users, Roles>()
     .AddEntityFrameworkStores<ApplicationDBContext>()
     .AddDefaultTokenProviders();
 
-<<<<<<< HEAD
-builder.Services.AddDbContext<ApplicationDBContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-=======
 // ✅ Custom services
->>>>>>> e8fc8678fdcb35c465159eab715094e98d61ea14
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IBookService, BookService>();
 builder.Services.AddScoped<IWhitelistService, WhitelistService>();

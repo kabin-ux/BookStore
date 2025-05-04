@@ -3,6 +3,7 @@ using BookStore.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using BookStore.DTO;
 
 namespace BookStore.Controllers
 {
@@ -23,23 +24,25 @@ namespace BookStore.Controllers
         [HttpGet("debug")]
         public IActionResult DebugClaims()
         {
-            return Ok(User.Claims.Select(c => new { c.Type, c.Value }));
+            var claims = User.Claims.Select(c => new { c.Type, c.Value });
+            return Ok(new BaseResponse<object>(200, true, "Claims fetched.", claims));
         }
 
         [HttpPost("add/{bookId}")]
         public async Task<IActionResult> AddToWhitelist(int bookId)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null) return Unauthorized();
+            if (user == null)
+                return Unauthorized(new BaseResponse<string>(401, false, "Unauthorized"));
 
             try
             {
                 await _whitelistService.AddToWhitelistAsync(user, bookId);
-                return Ok("Book added to whitelist.");
+                return Ok(new BaseResponse<object>(200, true, "Book added to whitelist.", new { bookId }));
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new BaseResponse<string>(400, false, ex.Message));
             }
         }
 
@@ -47,27 +50,29 @@ namespace BookStore.Controllers
         public async Task<IActionResult> GetMyWhitelist()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null) return Unauthorized();
+            if (user == null)
+                return Unauthorized(new BaseResponse<string>(401, false, "Unauthorized"));
 
             var list = await _whitelistService.GetMyWhitelistAsync(user);
-            return Ok(list);
+            return Ok(new BaseResponse<object>(200, true, "Whitelist retrieved successfully.", list));
         }
+
         [HttpDelete("remove/{bookId}")]
         public async Task<IActionResult> RemoveFromWhitelist(int bookId)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null) return Unauthorized();
+            if (user == null)
+                return Unauthorized(new BaseResponse<string>(401, false, "Unauthorized"));
 
             try
             {
                 await _whitelistService.RemoveFromWhitelistAsync(user, bookId);
-                return Ok("Book removed from whitelist.");
+                return Ok(new BaseResponse<object>(200, true, "Book removed from whitelist.", new { bookId }));
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new BaseResponse<string>(400, false, ex.Message));
             }
         }
-
     }
 }

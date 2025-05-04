@@ -3,25 +3,21 @@ using BookStore.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Identity;
-using Swashbuckle.AspNetCore.Filters;
 using Microsoft.OpenApi.Models;
-using BookStore;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using BookStore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ✅ Connection string
 var efConnectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
 builder.Services.AddDbContext<ApplicationDBContext>(options =>
     options.UseNpgsql(efConnectionString));
 
-// ✅ Identity
 builder.Services.AddIdentity<Users, Roles>()
     .AddEntityFrameworkStores<ApplicationDBContext>()
     .AddDefaultTokenProviders();
 
-// ✅ Custom services
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IBookService, BookService>();
 builder.Services.AddScoped<IWhitelistService, WhitelistService>();
@@ -29,7 +25,6 @@ builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<JwtTokenService>();
 
-// ✅ JWT Authentication
 var jwtConfig = builder.Configuration.GetSection(JwtOptions.SectionName);
 builder.Services.Configure<JwtOptions>(jwtConfig);
 
@@ -53,31 +48,10 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero,
         RoleClaimType = ClaimTypes.Role
     };
-
-    // ✅ Debug logging
-    options.Events = new JwtBearerEvents
-    {
-        OnAuthenticationFailed = context =>
-        {
-            Console.WriteLine("❌ JWT AUTHENTICATION FAILED");
-            Console.WriteLine(context.Exception.Message);
-            return Task.CompletedTask;
-        },
-        OnTokenValidated = context =>
-        {
-            Console.WriteLine("✅ JWT TOKEN VALIDATED");
-            return Task.CompletedTask;
-        }
-    };
 });
-
-
-
-
 
 builder.Services.AddAuthorization();
 
-// ✅ Swagger Setup with JWT Support
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -88,10 +62,8 @@ builder.Services.AddSwaggerGen(c =>
         Description = "API documentation for BookStore"
     });
 
-    // ✅ Define security scheme (Bearer)
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "Enter 'Bearer' followed by your JWT.\nExample: Bearer eyJhbGci...",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.Http,
@@ -99,7 +71,6 @@ builder.Services.AddSwaggerGen(c =>
         BearerFormat = "JWT"
     });
 
-    // ✅ Globally require Bearer for all secured endpoints
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -114,13 +85,8 @@ builder.Services.AddSwaggerGen(c =>
             new string[] { }
         }
     });
-
-    // ✅ OPTIONAL: Remove this line for now to simplify debugging
-    // c.OperationFilter<SecurityRequirementsOperationFilter>();
 });
 
-
-// ✅ CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -132,30 +98,13 @@ builder.Services.AddCors(options =>
     });
 });
 
-// ✅ Controllers
 builder.Services.AddControllers();
 
-// ✅ Build app
 var app = builder.Build();
 
-// ✅ Middlewares
 app.UseCors("AllowFrontend");
 app.UseHttpsRedirection();
 app.UseAuthentication();
-app.Use(async (context, next) =>
-{
-    if (context.User.Identity?.IsAuthenticated == true)
-    {
-        Console.WriteLine("🔍 JWT Debug - Claims:");
-        foreach (var claim in context.User.Claims)
-        {
-            Console.WriteLine($"{claim.Type} = {claim.Value}");
-        }
-    }
-    await next();
-});
-
-
 app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
@@ -164,13 +113,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// ✅ Seed Roles (optional)
 using (var scope = app.Services.CreateScope())
 {
     await RoleSeeder.SeedRoles(scope.ServiceProvider);
 }
 
-// ✅ Map routes
 app.MapControllers();
 
 app.Run();

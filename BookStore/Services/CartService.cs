@@ -12,13 +12,12 @@ namespace BookStore.Services
             _context = context;
         }
 
-        public async Task AddOrUpdateCartAsync(Users user, int bookId, int quantity)
+        public async Task UpdateCartAsync(Users user, int bookId, int quantity)
         {
             var book = await _context.Books.FindAsync(bookId);
             if (book == null) throw new Exception("Book not found");
 
-            var cartEntry = await _context.Carts
-                .FirstOrDefaultAsync(c => c.UserId == user.Id && c.BookId == bookId);
+            var cartEntry = await _context.Carts.FirstOrDefaultAsync(c => c.UserId == user.Id && c.BookId == bookId);
 
             if (cartEntry != null)
             {
@@ -56,24 +55,56 @@ namespace BookStore.Services
             return cartItems.Cast<object>().ToList();
         }
 
-        public async Task<bool> RemoveFromCartAsync(Users user, int bookId, int quantity)
+        public async Task<bool> RemoveFromCartAsync(Users user, int bookId)
         {
             var entry = await _context.Carts.FirstOrDefaultAsync(c => c.UserId == user.Id && c.BookId == bookId);
             if (entry == null) throw new Exception("Book not in cart");
 
-            if (entry.Quantity > quantity)
+            if (entry.Quantity > 1)
             {
-                entry.Quantity -= quantity;
+                entry.Quantity -= 1;
                 _context.Carts.Update(entry);
             }
             else
             {
-                _context.Carts.Remove(entry); // remove the cart entry if quantity becomes 0 or less
+                _context.Carts.Remove(entry);
             }
 
             await _context.SaveChangesAsync();
             return true;
         }
 
+        public async Task AddCartAsync(Users user, int bookId)
+        {
+            var book = await _context.Books.FindAsync(bookId);
+            if (book == null) throw new Exception("Book not found");
+
+            var cartbook = await _context.Carts.FirstOrDefaultAsync(c => c.UserId == user.Id && c.BookId == bookId);
+
+            if (cartbook != null)
+            {
+                cartbook.Quantity += 1;
+                _context.Carts.Update(cartbook);
+            }
+            else
+            {
+                var cart = new Carts
+                {
+                    UserId = user.Id,
+                    BookId = bookId,
+                    Quantity = 1
+                };
+                await _context.Carts.AddAsync(cart);
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task ClearCartAsync(Users user)
+        {
+            var entries = await _context.Carts.Where(c => c.UserId == user.Id).ToListAsync();
+            _context.Carts.RemoveRange(entries);
+            await _context.SaveChangesAsync();
+        }
     }
 }

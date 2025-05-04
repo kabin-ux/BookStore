@@ -13,6 +13,8 @@
         public string Email { get; set; }
 
         public string ContactNumber { get; set; }
+
+        public string? MembershipId { get; set; }
     }
 }
 

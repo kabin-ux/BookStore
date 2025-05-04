@@ -4,30 +4,35 @@ using Microsoft.AspNetCore.Identity;
 
 namespace BookStore.Services
 {
-    public class UserService:IUserService
+    public class UserService : IUserService
     {
         private UserManager<Users> _userManager;
 
-        public UserService(UserManager<Users> userManager)
+        private readonly JwtTokenService _jwtTokenService;
+
+        public UserService(UserManager<Users> userManager, JwtTokenService jwtTokenService)
         {
             _userManager = userManager;
+            _jwtTokenService = jwtTokenService;
         }
 
         public async Task<bool> AddUser(UserRegisterDTO userDTO)
         {
             var newUser = new Users
             {
-                UserName = userDTO.UserName, 
+                UserName = userDTO.UserName,
                 Email = userDTO.Email,
                 FirstName = userDTO.FirstName,
                 LastName = userDTO.LastName,
-                ContactNumber = userDTO.ContactNumber, 
+                ContactNumber = userDTO.ContactNumber,
+                MembershipId = userDTO.MembershipId
             };
 
             var result = await _userManager.CreateAsync(newUser, userDTO.Password);
 
             if (result.Succeeded)
             {
+                await _userManager.AddToRoleAsync(newUser, "User");
                 return true;
             }
             else
@@ -40,21 +45,22 @@ namespace BookStore.Services
             }
         }
 
-        public async Task<bool> UserLogin(LoginDTO loginCredential)
+        public async Task<(string? token, Users? user, IList<string> roles)> UserLoginWithUserData(LoginDTO loginCredential)
         {
             var user = await isUserExist(loginCredential.Email);
-            if (user == null)
+            if (user != null)
             {
-                var isAuthenticated = await _userManager
-                    .CheckPasswordAsync(user, loginCredential.Password);
+                var isAuthenticated = await _userManager.CheckPasswordAsync(user, loginCredential.Password);
                 if (isAuthenticated)
                 {
-                    return true;
+                    var token = await _jwtTokenService.GenerateUserToken(user);
+                    var roles = await _userManager.GetRolesAsync(user);
+                    return (token, user, roles);
                 }
-
             }
-            return false;
+            return (null, null, new List<string>());
         }
+
 
         private async Task<Users> isUserExist(string email)
         {

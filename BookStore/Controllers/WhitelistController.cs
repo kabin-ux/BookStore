@@ -8,7 +8,7 @@ namespace BookStore.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "User")]
+    [Authorize(Roles = "Member")]
     public class WhitelistController : ControllerBase
     {
         private readonly UserManager<Users> _userManager;

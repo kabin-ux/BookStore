@@ -29,6 +29,8 @@ builder.Services.AddScoped<IBookService, BookService>();
 builder.Services.AddScoped<IWhitelistService, WhitelistService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IOrdersService, OrdersService>();
 
 //  JWT Authentication
 var jwtConfig = builder.Configuration.GetSection(JwtOptions.SectionName);

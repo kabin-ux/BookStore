@@ -12,6 +12,9 @@ namespace BookStore.Entities
         public int Quantity { get; set; }
 
         [Required]
+        public decimal Price { get; set; }
+
+        [Required]
         [ForeignKey("Order")]
         public int OrderId { get; set; }
         public Orders Order { get; set; }

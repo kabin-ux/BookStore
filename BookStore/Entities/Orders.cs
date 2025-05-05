@@ -31,5 +31,7 @@ namespace BookStore.Entities
         [ForeignKey("User")]
         public long UserId { get; set; }
         public Users User { get; set; }
+
+        public virtual ICollection<OrderItem> OrderItems { get; set; }
     }
 }

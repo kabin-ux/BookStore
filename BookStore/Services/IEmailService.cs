@@ -3,6 +3,7 @@ namespace BookStore.Services
 {
     public interface IEmailService
     {
-        Task SendEmailAsync(string email, string subject, string body);
+        string GenerateCode();
+        Task SendEmailAsync(string code, string toEmail);
     }
 }

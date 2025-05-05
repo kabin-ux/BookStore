@@ -24,6 +24,7 @@ builder.Services.AddScoped<IWhitelistService, WhitelistService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddScoped<IOrdersService, OrdersService>();
 
 var jwtConfig = builder.Configuration.GetSection(JwtOptions.SectionName);
 builder.Services.Configure<JwtOptions>(jwtConfig);

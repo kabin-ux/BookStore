@@ -11,9 +11,15 @@ namespace BookStore.Services
         {
             _config = config;
         }
-
-        public async Task SendEmailAsync(string toEmail, string subject, string body)
+        public string GenerateCode()
         {
+            return new Random().Next(100000, 999999).ToString();
+        }
+
+        public async Task SendEmailAsync(string code, string toEmail)
+        {
+            var subject = "Your Verification Code";
+            var body = $"Your 6-digit verification code is: {code}";
             using var smtpClient = new SmtpClient(_config["Smtp:Host"])
             {
                 Port = int.Parse(_config["Smtp:Port"]),

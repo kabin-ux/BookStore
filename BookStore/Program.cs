@@ -8,6 +8,8 @@ using BookStore;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Cors.Infrastructure;
+using BookStore.WebSocket;
+using Microsoft.AspNetCore.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -134,6 +136,8 @@ builder.Services.AddCors(options =>
 //  Controllers
 builder.Services.AddControllers();
 
+builder.Services.AddSignalR();
+
 //  Build app
 var app = builder.Build();
 
@@ -165,5 +169,15 @@ if (app.Environment.IsDevelopment())
 
 //  Map routes
 app.MapControllers();
+
+app.MapPost("broadcast", async (string message, IHubContext<ChatHub, IChatClient> context) =>
+{
+    await context.Clients.All.ReceiveMessage(message);
+
+    return Results.NoContent();
+}
+);
+
+app.MapHub<ChatHub>("/chat-hub");
 
 app.Run();

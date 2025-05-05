@@ -9,7 +9,7 @@ namespace BookStore.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "User")]
+    [Authorize(Roles = "Member")]
     public class CartController : ControllerBase
     {
         private readonly UserManager<Users> _userManager;

@@ -12,7 +12,7 @@ namespace BookStore.Services
             _context = context;
         }
 
-        public async Task UpdateCartAsync(Users user, int bookId, int quantity)
+        public async Task AddOneToCartAsync(Users user, int bookId)
         {
             var book = await _context.Books.FindAsync(bookId);
             if (book == null) throw new Exception("Book not found");
@@ -21,7 +21,7 @@ namespace BookStore.Services
 
             if (cartEntry != null)
             {
-                cartEntry.Quantity += quantity;
+                cartEntry.Quantity += 1;
                 _context.Carts.Update(cartEntry);
             }
             else
@@ -30,13 +30,14 @@ namespace BookStore.Services
                 {
                     UserId = user.Id,
                     BookId = bookId,
-                    Quantity = quantity
+                    Quantity = 1
                 };
                 await _context.Carts.AddAsync(cart);
             }
 
             await _context.SaveChangesAsync();
         }
+
 
         public async Task<List<object>> GetMyCartAsync(Users user)
         {
@@ -57,6 +58,17 @@ namespace BookStore.Services
         }
 
         public async Task<bool> RemoveFromCartAsync(Users user, int bookId)
+        {
+            var entry = await _context.Carts.FirstOrDefaultAsync(c => c.UserId == user.Id && c.BookId == bookId);
+            if (entry == null) throw new Exception("Book not in cart");
+
+            _context.Carts.Remove(entry);
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> RemoveOneItemFromCartAsync(Users user, int bookId)
         {
             var entry = await _context.Carts.FirstOrDefaultAsync(c => c.UserId == user.Id && c.BookId == bookId);
             if (entry == null) throw new Exception("Book not in cart");
@@ -100,6 +112,7 @@ namespace BookStore.Services
 
             await _context.SaveChangesAsync();
         }
+
 
         public async Task ClearCartAsync(Users user)
         {

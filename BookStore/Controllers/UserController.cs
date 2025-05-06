@@ -1,4 +1,5 @@
 ﻿using BookStore.DTO;
+using BookStore.Entities;
 using BookStore.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -34,7 +35,7 @@ namespace BookStore.Controllers
                 }
                 else
                 {
-                    return Ok("User created successfully.");
+                    return Ok((new BaseResponse<Object>(200, true, "User created successfully")));
                 }
             }
             else

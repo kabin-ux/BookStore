@@ -39,8 +39,8 @@ namespace BookStore.Controllers
             }
         }
 
-        [HttpPost("addQuantity")]
-        public async Task<IActionResult> AddToCartQuantity([FromQuery] int bookId, [FromQuery] int quantity = 1)
+        [HttpPost("increase/{bookId}")]
+        public async Task<IActionResult> AddToCartQuantity(int bookId)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
@@ -48,8 +48,8 @@ namespace BookStore.Controllers
 
             try
             {
-                await _cartService.UpdateCartAsync(user, bookId, quantity);
-                return Ok(new BaseResponse<object>(200, true, "Quantity updated in cart.", new { bookId, quantity }));
+                await _cartService.AddOneToCartAsync(user, bookId);
+                return Ok(new BaseResponse<object>(200, true, "Quantity updated in cart.", new { bookId }));
             }
             catch (Exception ex)
             {
@@ -78,6 +78,24 @@ namespace BookStore.Controllers
             try
             {
                 await _cartService.RemoveFromCartAsync(user, bookId);
+                return Ok(new BaseResponse<object>(200, true, "One quantity removed or book removed from cart.", new { bookId }));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new BaseResponse<string>(400, false, ex.Message));
+            }
+        }
+
+        [HttpDelete("decrease/{bookId}")]
+        public async Task<IActionResult> RemoveOneItemFromCartAsync(int bookId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Unauthorized(new BaseResponse<string>(401, false, "Unauthorized"));
+
+            try
+            {
+                await _cartService.RemoveOneItemFromCartAsync(user, bookId);
                 return Ok(new BaseResponse<object>(200, true, "One quantity removed or book removed from cart.", new { bookId }));
             }
             catch (Exception ex)

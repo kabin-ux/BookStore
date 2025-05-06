@@ -124,6 +124,9 @@ namespace BookStore.Migrations
                     b.Property<int>("OrderId")
                         .HasColumnType("integer");
 
+                    b.Property<decimal>("Price")
+                        .HasColumnType("numeric");
+
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
@@ -239,7 +242,20 @@ namespace BookStore.Migrations
                         new
                         {
                             Id = 1L,
-                            Name = "SuperAdmin"
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = 2L,
+                            Name = "Member",
+                            NormalizedName = "MEMBER"
+                        },
+                        new
+                        {
+                            Id = 3L,
+                            Name = "Staff",
+                            NormalizedName = "STAFF"
                         });
                 });
 
@@ -563,7 +579,7 @@ namespace BookStore.Migrations
                         .IsRequired();
 
                     b.HasOne("BookStore.Entities.Orders", "Order")
-                        .WithMany()
+                        .WithMany("OrderItems")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -676,6 +692,11 @@ namespace BookStore.Migrations
             modelBuilder.Entity("Books", b =>
                 {
                     b.Navigation("Discounts");
+                });
+
+            modelBuilder.Entity("BookStore.Entities.Orders", b =>
+                {
+                    b.Navigation("OrderItems");
                 });
 #pragma warning restore 612, 618
         }

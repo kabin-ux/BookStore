@@ -8,27 +8,31 @@ using BookStore;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Cors.Infrastructure;
+using BookStore.WebSocket;
+using Microsoft.AspNetCore.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ✅ Connection string
+//  Connection string
 var efConnectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
 builder.Services.AddDbContext<ApplicationDBContext>(options =>
     options.UseNpgsql(efConnectionString));
 
-// ✅ Identity
+//  Identity
 builder.Services.AddIdentity<Users, Roles>()
     .AddEntityFrameworkStores<ApplicationDBContext>()
     .AddDefaultTokenProviders();
 
-// ✅ Custom services
+//  Custom services
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IBookService, BookService>();
 builder.Services.AddScoped<IWhitelistService, WhitelistService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IOrdersService, OrdersService>();
 
-// ✅ JWT Authentication
+//  JWT Authentication
 var jwtConfig = builder.Configuration.GetSection(JwtOptions.SectionName);
 builder.Services.Configure<JwtOptions>(jwtConfig);
 
@@ -53,7 +57,7 @@ builder.Services.AddAuthentication(options =>
         RoleClaimType = ClaimTypes.Role
     };
 
-    // ✅ Debug logging
+    //  Debug logging
     options.Events = new JwtBearerEvents
     {
         OnAuthenticationFailed = context =>
@@ -64,7 +68,7 @@ builder.Services.AddAuthentication(options =>
         },
         OnTokenValidated = context =>
         {
-            Console.WriteLine("✅ JWT TOKEN VALIDATED");
+            Console.WriteLine(" JWT TOKEN VALIDATED");
             return Task.CompletedTask;
         }
     };
@@ -76,7 +80,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// ✅ Swagger Setup with JWT Support
+//  Swagger Setup with JWT Support
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -87,7 +91,7 @@ builder.Services.AddSwaggerGen(c =>
         Description = "API documentation for BookStore"
     });
 
-    // ✅ Define security scheme (Bearer)
+    //  Define security scheme (Bearer)
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "Enter 'Bearer' followed by your JWT.\nExample: Bearer eyJhbGci...",
@@ -98,7 +102,7 @@ builder.Services.AddSwaggerGen(c =>
         BearerFormat = "JWT"
     });
 
-    // ✅ Globally require Bearer for all secured endpoints
+    //  Globally require Bearer for all secured endpoints
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -114,12 +118,12 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 
-    // ✅ OPTIONAL: Remove this line for now to simplify debugging
+    //  OPTIONAL: Remove this line for now to simplify debugging
     // c.OperationFilter<SecurityRequirementsOperationFilter>();
 });
 
 
-// ✅ CORS
+//  CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -131,13 +135,15 @@ builder.Services.AddCors(options =>
     });
 });
 
-// ✅ Controllers
+//  Controllers
 builder.Services.AddControllers();
 
-// ✅ Build app
+builder.Services.AddSignalR();
+
+//  Build app
 var app = builder.Build();
 
-// ✅ Middlewares
+//  Middlewares
 app.UseCors("AllowFrontend");
 app.UseHttpsRedirection();
 app.UseAuthentication();
@@ -163,16 +169,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// ✅ Seed Roles (optional)
-using (var scope = app.Services.CreateScope())
-{
-    await RoleSeeder.SeedRoles(scope.ServiceProvider);
-}
-
-app.UseStaticFiles(); // Already present by default in templates
-
-
-// ✅ Map routes
+//  Map routes
 app.MapControllers();
+
+app.MapPost("broadcast", async (string message, IHubContext<ChatHub, IChatClient> context) =>
+{
+    await context.Clients.All.ReceiveMessage(message);
+
+    return Results.NoContent();
+}
+);
+
+app.MapHub<ChatHub>("/chat-hub");
 
 app.Run();

@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BookStore.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    [Migration("20250419044241_intial1")]
-    partial class intial1
+    [Migration("20250505104210_order")]
+    partial class order
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -177,6 +177,9 @@ namespace BookStore.Migrations
                     b.Property<int>("OrderId")
                         .HasColumnType("integer");
 
+                    b.Property<decimal>("Price")
+                        .HasColumnType("numeric");
+
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
@@ -292,7 +295,20 @@ namespace BookStore.Migrations
                         new
                         {
                             Id = 1L,
-                            Name = "SuperAdmin"
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = 2L,
+                            Name = "Member",
+                            NormalizedName = "MEMBER"
+                        },
+                        new
+                        {
+                            Id = 3L,
+                            Name = "Staff",
+                            NormalizedName = "STAFF"
                         });
                 });
 
@@ -337,7 +353,6 @@ namespace BookStore.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("MembershipId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("NormalizedEmail")
@@ -561,7 +576,7 @@ namespace BookStore.Migrations
                         .IsRequired();
 
                     b.HasOne("BookStore.Entities.Orders", "Order")
-                        .WithMany()
+                        .WithMany("OrderItems")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -674,6 +689,11 @@ namespace BookStore.Migrations
             modelBuilder.Entity("BookStore.Entities.Books", b =>
                 {
                     b.Navigation("Discounts");
+                });
+
+            modelBuilder.Entity("BookStore.Entities.Orders", b =>
+                {
+                    b.Navigation("OrderItems");
                 });
 #pragma warning restore 612, 618
         }

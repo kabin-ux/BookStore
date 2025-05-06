@@ -72,6 +72,14 @@ namespace BookStore.Controllers
             return Unauthorized("Invalid email or password.");
         }
 
+        [HttpGet("all")]
+        [Authorize(Roles = "Staff")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            var users = await _userService.GetAllUsersAsync();
+            return Ok(users);
+        }
+
 
         [HttpGet("ping")]
         public IActionResult Ping() => Ok("User controller is reachable.");

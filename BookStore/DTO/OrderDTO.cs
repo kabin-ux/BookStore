@@ -23,6 +23,8 @@ namespace BookStore.DTO
 
     public class OrderResponseDTO
     {
+        public long UserId { get; set; }
+        public string UserName { get; set; }
         public int OrderId { get; set; }
         public DateTime OrderDate { get; set; }
         public string Status { get; set; }

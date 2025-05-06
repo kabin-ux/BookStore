@@ -7,6 +7,8 @@ namespace BookStore.Services
     {
         Task<bool> AddUser(UserRegisterDTO userDTO);
         Task<(string? token, Users? user, IList<string> roles)> UserLoginWithUserData(LoginDTO userDTO);
+        Task<List<Users>> GetAllUsersAsync();
+
         Task<bool> FindUser(string email);
     }
 }

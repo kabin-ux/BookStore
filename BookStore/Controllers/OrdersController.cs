@@ -92,5 +92,23 @@ namespace BookStore.Controllers
                 return BadRequest(new BaseResponse<string>(400, false, ex.Message));
             }
         }
+
+        [HttpPost("by-user-id")]
+        [Authorize(Roles = "Admin,Staff")]
+        public async Task<ActionResult<BaseResponse<object>>> GetOrdersByUserId([FromBody] UserIdRequestDTO request)
+        {
+            try
+            {
+                var orders = await _ordersService.GetUserOrders(request.UserId);
+
+                return Ok(new BaseResponse<object>(200, true, "User Orders Retrieved", orders));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new BaseResponse<string>(400, false, ex.Message));
+            }
+        }
+
+
     }
 }

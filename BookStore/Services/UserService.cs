@@ -60,6 +60,10 @@ namespace BookStore.Services
             }
             return (null, null, new List<string>());
         }
+        public async Task<List<Users>> GetAllUsersAsync()
+        {
+            return await Task.FromResult(_userManager.Users.ToList());
+        }
 
 
         private async Task<Users> isUserExist(string email)

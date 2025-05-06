@@ -148,11 +148,14 @@ namespace BookStore.Services
         {
             var orders = await _context.Orders
                 .Where(o => o.UserId == userId)
+                .Include(o => o.User) // Include the User navigation property
                 .Include(o => o.OrderItems)
                 .ToListAsync();
 
             var response = orders.Select(o => new OrderResponseDTO
             {
+                UserId = o.UserId,
+                UserName = o.User.UserName,
                 OrderId = o.OrderId,
                 OrderDate = o.OrderDate,
                 Status = o.Status,
@@ -170,6 +173,7 @@ namespace BookStore.Services
 
             return response;
         }
+
     }
 
 }

@@ -10,7 +10,6 @@ namespace BookStore.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "User")]
     public class ReviewController : ControllerBase
     {
         private readonly UserManager<Users> _userManager;
@@ -23,6 +22,7 @@ namespace BookStore.Controllers
         }
 
         [HttpGet("has-purchased/{bookId}")]
+        [Authorize(Roles = "Member")]
         public async Task<IActionResult> HasUserPurchasedBook(int bookId)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -38,6 +38,7 @@ namespace BookStore.Controllers
             }
         }
         [HttpPost("add")]
+        [Authorize(Roles = "Member")]
         public async Task<IActionResult> AddReview([FromBody] AddReviewDTO reviewDto)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -55,6 +56,7 @@ namespace BookStore.Controllers
 
         }
         [HttpPut("Edit-Review/{reviewId}")]
+        [Authorize(Roles = "Member")]
         public async Task<IActionResult> EditReview([FromBody] AddReviewDTO reviewDto, int reviewId)
         {
             try
@@ -86,6 +88,7 @@ namespace BookStore.Controllers
         }
 
         [HttpDelete("Delete-Book/{reviewId}")]
+        [Authorize(Roles = "Member")]
         public async Task<IActionResult> DeleteReview(int reviewId)
         {
             try

@@ -31,6 +31,7 @@ builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IOrdersService, OrdersService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
 
 //  JWT Authentication
 var jwtConfig = builder.Configuration.GetSection(JwtOptions.SectionName);

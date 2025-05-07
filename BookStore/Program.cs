@@ -62,7 +62,7 @@ builder.Services.AddAuthentication(options =>
     {
         OnAuthenticationFailed = context =>
         {
-            Console.WriteLine("❌ JWT AUTHENTICATION FAILED");
+            Console.WriteLine("JWT AUTHENTICATION FAILED");
             Console.WriteLine(context.Exception.Message);
             return Task.CompletedTask;
         },
@@ -118,8 +118,6 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 
-    //  OPTIONAL: Remove this line for now to simplify debugging
-    // c.OperationFilter<SecurityRequirementsOperationFilter>();
 });
 
 
@@ -168,6 +166,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseStaticFiles(); 
 
 //  Map routes
 app.MapControllers();

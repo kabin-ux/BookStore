@@ -8,7 +8,7 @@ namespace BookStore.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "User")]
+    [Authorize(Roles = "Member")]
     public class WhitelistController : ControllerBase
     {
         private readonly UserManager<Users> _userManager;
@@ -52,6 +52,7 @@ namespace BookStore.Controllers
             var list = await _whitelistService.GetMyWhitelistAsync(user);
             return Ok(list);
         }
+
         [HttpDelete("remove/{bookId}")]
         public async Task<IActionResult> RemoveFromWhitelist(int bookId)
         {

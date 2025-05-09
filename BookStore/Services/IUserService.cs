@@ -5,7 +5,7 @@ namespace BookStore.Services
 {
     public interface IUserService
     {
-        Task<bool> AddUser(UserRegisterDTO userDTO);
+        Task<bool> AddUser(UserRegisterDTO userDTO, string? creatorRole = null);
         Task<(string? token, Users? user, IList<string> roles)> UserLoginWithUserData(LoginDTO userDTO);
         Task<bool> FindUser(string email);
     }

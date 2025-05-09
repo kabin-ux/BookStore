@@ -26,13 +26,15 @@ namespace BookStore.Services
             return await _context.Books.FindAsync(id);
         }
 
-
         public class PagedResult<T>
         {
             public List<T> Items { get; set; }
+            public int TotalItems { get; set; }
             public int TotalPages { get; set; }
-            public int TotalCount { get; set; }
+            public int PageSize { get; set; }
+            public int CurrentItemCount { get; set; } 
         }
+
         public async Task<PagedResult<Books>> SearchBooks(
     string search, string sort, string author, string? genre, int pageNumber, int pageSize)
         {
@@ -86,8 +88,10 @@ namespace BookStore.Services
             return new PagedResult<Books>
             {
                 Items = items,
-                TotalCount = totalCount,
-                TotalPages = totalPages
+                TotalItems = totalCount,
+                TotalPages = totalPages,
+                PageSize = pageSize,
+                CurrentItemCount = items.Count 
             };
         }
 

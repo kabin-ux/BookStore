@@ -26,40 +26,92 @@ namespace BookStore.Services
             return await _context.Books.FindAsync(id);
         }
 
-        public async Task<List<Books>> SearchBooks(string search, string sort, string author, int? year)
+
+        public class PagedResult<T>
+        {
+            public List<T> Items { get; set; }
+            public int TotalPages { get; set; }
+            public int TotalCount { get; set; }
+        }
+        public async Task<PagedResult<Books>> SearchBooks(
+    string search, string sort, string author, string? genre, int pageNumber, int pageSize)
         {
             var query = _context.Books.AsQueryable();
 
             if (!string.IsNullOrEmpty(search))
             {
-                query = query.Where(b => b.Title.Contains(search) || b.Genre.Contains(search));
+                var lowerSearch = search.ToLower();
+                query = query.Where(b =>
+                    b.Title.ToLower().Contains(lowerSearch) ||
+                    b.Genre.ToLower().Contains(lowerSearch));
             }
 
             if (!string.IsNullOrEmpty(author))
             {
-                query = query.Where(b => b.Author.Contains(author));
+                query = query.Where(b => b.Author.ToLower().Contains(author.ToLower()));
             }
 
-            if (year.HasValue)
+            if (!string.IsNullOrEmpty(genre))
             {
-                // You must have a PublishedYear property in your model for this. (currently not in Books)
-                // Example: query = query.Where(b => b.PublishedYear == year.Value);
+                query = query.Where(b => b.Genre.ToLower().Contains(genre.ToLower()));
             }
 
             if (!string.IsNullOrEmpty(sort))
             {
-                if (sort.ToLower() == "title_desc")
-                    query = query.OrderByDescending(b => b.Title);
-                else if (sort.ToLower() == "title_asc")
-                    query = query.OrderBy(b => b.Title);
-                // add more sorting logic if needed
+                switch (sort.ToLower())
+                {
+                    case "title_desc":
+                        query = query.OrderByDescending(b => b.Title);
+                        break;
+                    case "title_asc":
+                        query = query.OrderBy(b => b.Title);
+                        break;
+                    case "price_asc":
+                        query = query.OrderBy(b => b.Price);
+                        break;
+                    case "price_desc":
+                        query = query.OrderByDescending(b => b.Price);
+                        break;
+                }
             }
 
-            return await query.ToListAsync();
+            var totalCount = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            var items = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResult<Books>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                TotalPages = totalPages
+            };
         }
 
         public async Task<Books> AddBook(BookCreateUpdateDTO bookDTO)
         {
+            string? imagePath = null;
+
+            if (bookDTO.Image != null && bookDTO.Image.Length > 0)
+            {
+                var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "books");
+                if (!Directory.Exists(folderPath))
+                    Directory.CreateDirectory(folderPath);
+
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(bookDTO.Image.FileName);
+                var fullPath = Path.Combine(folderPath, fileName);
+
+                using (var stream = new FileStream(fullPath, FileMode.Create))
+                {
+                    await bookDTO.Image.CopyToAsync(stream);
+                }
+
+                imagePath = $"/images/books/{fileName}";
+            }
+
             var newBook = new Books
             {
                 Title = bookDTO.Title,
@@ -71,7 +123,9 @@ namespace BookStore.Services
                 ISBN = bookDTO.ISBN,
                 StockQuantity = bookDTO.StockQuantity,
                 Price = bookDTO.Price,
-                IsAvailable = bookDTO.IsAvailable
+                IsAvailable = bookDTO.IsAvailable,
+                PublicationDate = bookDTO.PublicationDate.Date.AddHours(12),
+                ImagePath = imagePath
             };
 
             try
@@ -95,6 +149,25 @@ namespace BookStore.Services
                 return null;
             }
 
+            string? imagePath = book.ImagePath;
+
+            if (bookDTO.Image != null && bookDTO.Image.Length > 0)
+            {
+                var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "books");
+                if (!Directory.Exists(folderPath))
+                    Directory.CreateDirectory(folderPath);
+
+                var fileName = Guid.NewGuid() + Path.GetExtension(bookDTO.Image.FileName);
+                var fullPath = Path.Combine(folderPath, fileName);
+
+                using (var stream = new FileStream(fullPath, FileMode.Create))
+                {
+                    await bookDTO.Image.CopyToAsync(stream);
+                }
+
+                imagePath = $"/images/books/{fileName}";
+            }
+
             book.Title = bookDTO.Title;
             book.Author = bookDTO.Author;
             book.Genre = bookDTO.Genre;
@@ -105,6 +178,8 @@ namespace BookStore.Services
             book.StockQuantity = bookDTO.StockQuantity;
             book.Price = bookDTO.Price;
             book.IsAvailable = bookDTO.IsAvailable;
+            book.PublicationDate = bookDTO.PublicationDate.Date.AddHours(12);
+            book.ImagePath = imagePath;
 
             await _context.SaveChangesAsync();
             return book;

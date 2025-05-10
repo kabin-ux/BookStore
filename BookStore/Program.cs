@@ -31,6 +31,8 @@ builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IOrdersService, OrdersService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
+
 
 //  JWT Authentication
 var jwtConfig = builder.Configuration.GetSection(JwtOptions.SectionName);
@@ -117,9 +119,6 @@ builder.Services.AddSwaggerGen(c =>
             new string[] { }
         }
     });
-
-    //  OPTIONAL: Remove this line for now to simplify debugging
-    // c.OperationFilter<SecurityRequirementsOperationFilter>();
 });
 
 
@@ -151,7 +150,7 @@ app.Use(async (context, next) =>
 {
     if (context.User.Identity?.IsAuthenticated == true)
     {
-        Console.WriteLine("🔍 JWT Debug - Claims:");
+        Console.WriteLine("JWT Debug - Claims:");
         foreach (var claim in context.User.Claims)
         {
             Console.WriteLine($"{claim.Type} = {claim.Value}");
@@ -172,13 +171,14 @@ if (app.Environment.IsDevelopment())
 //  Map routes
 app.MapControllers();
 
-app.MapPost("broadcast", async (string message, IHubContext<ChatHub, IChatClient> context) =>
+app.MapPost("notifications/all", async (
+    string content,
+    IHubContext<ChatHub, IChatClient> context) =>
 {
-    await context.Clients.All.ReceiveMessage(message);
+    await context.Clients.All.ReceiveMessage(content);
 
     return Results.NoContent();
-}
-);
+});
 
 app.MapHub<ChatHub>("/chat-hub");
 

@@ -174,6 +174,55 @@ namespace BookStore.Services
             return response;
         }
 
+
+        public async Task<OrderResponseDTO> ProcessClaimCode(ClaimOrderDTO claimOrderDto)
+        {
+            // Find the order with the given claim code
+            var order = await _context.Orders
+                .Include(o => o.User)
+                .Include(o => o.OrderItems)
+                .FirstOrDefaultAsync(o => o.ClaimCode == claimOrderDto.ClaimCode);
+
+            if (order == null)
+            {
+                throw new Exception("Invalid claim code");
+            }
+
+            // Check if the order is already completed or cancelled
+            if (order.Status == "Completed")
+            {
+                throw new Exception("Order has already been claimed");
+            }
+
+            if (order.Status == "Cancelled")
+            {
+                throw new Exception("Cannot claim a cancelled order");
+            }
+
+            // Update the order status to completed
+            order.Status = "Completed";
+            await _context.SaveChangesAsync();
+
+            // Return the order details
+            return new OrderResponseDTO
+            {
+                UserId = order.UserId,
+                UserName = order.User.UserName,
+                OrderId = order.OrderId,
+                OrderDate = order.OrderDate,
+                Status = order.Status,
+                ClaimCode = order.ClaimCode,
+                BillAmount = order.BillAmount,
+                DiscountApplied = order.DiscountApplied,
+                FinalAmount = order.FinalAmount,
+                OrderItems = order.OrderItems.Select(oi => new OrderItemDTO
+                {
+                    BookId = oi.BookId,
+                    Quantity = oi.Quantity,
+                    Price = oi.Price
+                }).ToList()
+            };
+        }
     }
 
 }

@@ -15,7 +15,7 @@ namespace BookStore.Entities
         public decimal Price { get; set; }
 
         [Required]
-        [ForeignKey("Order")]
+        [ForeignKey("Order")]git 
         public int OrderId { get; set; }
         public Orders Order { get; set; }
 

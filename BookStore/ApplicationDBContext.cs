@@ -19,8 +19,7 @@ namespace BookStore
         public DbSet<Reviews> Reviews { get; set; }
         public DbSet<Carts> Carts { get; set; }
         public DbSet<Whitelists> Whitelists { get; set; }
-
-
+        public DbSet<Banners> Banners { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

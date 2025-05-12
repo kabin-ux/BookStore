@@ -32,8 +32,6 @@ namespace BookStore.DTO
         public decimal FinalAmount { get; set; }
         public List<OrderItemDTO> OrderItems { get; set; }
     }
-<<<<<<< HEAD
-} 
-=======
+
 }
->>>>>>> 0a09c6996bea36f9536a19920a05d2b0f48dbaaa
+

@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using BookStore.WebSocket;
 using Microsoft.AspNetCore.SignalR;
+using BookStore.Exceptions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -143,6 +144,7 @@ builder.Services.AddSignalR();
 var app = builder.Build();
 
 //  Middlewares
+app.UseMiddleware<ExceptionHandler>();
 app.UseCors("AllowFrontend");
 app.UseHttpsRedirection();
 app.UseAuthentication();

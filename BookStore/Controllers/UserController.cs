@@ -21,7 +21,7 @@ namespace BookStore.Controllers
         }
 
         [HttpPost("register-user")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> RegisterUserByAdmin(UserRegisterDTO user)
         {
             var isUserExist = await _userService.FindUser(user.Email);

@@ -1,4 +1,5 @@
 ﻿using BookStore.Entities;
+using BookStore.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookStore.Services
@@ -15,10 +16,12 @@ namespace BookStore.Services
         public async Task<bool> AddToWhitelistAsync(Users user, int bookId)
         {
             var book = await _context.Books.FindAsync(bookId);
-            if (book == null) throw new Exception("Book not found");
+            if (book == null)
+                throw new NotFoundException("Book not found");
 
             var exists = await _context.Whitelists.AnyAsync(w => w.UserId == user.Id && w.BookId == bookId);
-            if (exists) throw new Exception("Book already in whitelist");
+            if (exists)
+                throw new ConflictException("Book already in whitelist");
 
             var whitelist = new Whitelists
             {
@@ -50,21 +53,24 @@ namespace BookStore.Services
                     w.Book.ImagePath
                 }).ToListAsync();
 
-            return list.Cast<object>().ToList(); // cast to match return type
+            if (!list.Any())
+                throw new NotFoundException("Whitelist is empty");
+
+            return list.Cast<object>().ToList();
         }
+
         public async Task<bool> RemoveFromWhitelistAsync(Users user, int bookId)
         {
             var entry = await _context.Whitelists
                 .FirstOrDefaultAsync(w => w.UserId == user.Id && w.BookId == bookId);
 
             if (entry == null)
-                throw new Exception("Book not found in whitelist.");
+                throw new NotFoundException("Book not found in whitelist");
 
             _context.Whitelists.Remove(entry);
             await _context.SaveChangesAsync();
 
             return true;
         }
-
     }
 }

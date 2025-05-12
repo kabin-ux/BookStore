@@ -25,45 +25,25 @@ namespace BookStore.Controllers
         public async Task<IActionResult> AddToCart(int bookId)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return Unauthorized(new BaseResponse<string>(401, false, "Unauthorized"));
-
-            try
-            {
+           
                 await _cartService.AddCartAsync(user, bookId);
                 return Ok(new BaseResponse<object>(200, true, "Book added to cart.", new { bookId }));
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new BaseResponse<string>(400, false, ex.Message));
-            }
         }
 
         [HttpPost("increase/{bookId}")]
         public async Task<IActionResult> AddToCartQuantity(int bookId)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return Unauthorized(new BaseResponse<string>(401, false, "Unauthorized"));
 
-            try
-            {
                 await _cartService.AddOneToCartAsync(user, bookId);
                 return Ok(new BaseResponse<object>(200, true, "Quantity updated in cart.", new { bookId }));
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new BaseResponse<string>(400, false, ex.Message));
-            }
+
         }
 
         [HttpGet("my-cart")]
         public async Task<IActionResult> GetMyCart()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return Unauthorized(new BaseResponse<string>(401, false, "Unauthorized"));
-
             var cartItems = await _cartService.GetMyCartAsync(user);
             return Ok(new BaseResponse<object>(200, true, "Cart retrieved successfully.", cartItems));
         }
@@ -72,47 +52,25 @@ namespace BookStore.Controllers
         public async Task<IActionResult> RemoveFromCart(int bookId)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return Unauthorized(new BaseResponse<string>(401, false, "Unauthorized"));
-
-            try
-            {
                 await _cartService.RemoveFromCartAsync(user, bookId);
                 return Ok(new BaseResponse<object>(200, true, "One quantity removed or book removed from cart.", new { bookId }));
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new BaseResponse<string>(400, false, ex.Message));
-            }
         }
 
         [HttpDelete("decrease/{bookId}")]
         public async Task<IActionResult> RemoveOneItemFromCartAsync(int bookId)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return Unauthorized(new BaseResponse<string>(401, false, "Unauthorized"));
-
-            try
-            {
                 await _cartService.RemoveOneItemFromCartAsync(user, bookId);
                 return Ok(new BaseResponse<object>(200, true, "One quantity removed or book removed from cart.", new { bookId }));
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new BaseResponse<string>(400, false, ex.Message));
-            }
         }
 
         [HttpDelete("clear")]
         public async Task<IActionResult> ClearCart()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return Unauthorized(new BaseResponse<string>(401, false, "Unauthorized"));
-
             await _cartService.ClearCartAsync(user);
             return Ok(new BaseResponse<string>(200, true, "Cart cleared successfully."));
         }
     }
+
 }

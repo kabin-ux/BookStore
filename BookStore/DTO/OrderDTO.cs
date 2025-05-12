@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 using System.ComponentModel.DataAnnotations;
 
 namespace BookStore.DTO
@@ -14,6 +15,16 @@ namespace BookStore.DTO
         public decimal FinalAmount { get; set; }
 
         [Required]
+=======
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace BookStore.DTO
+{
+    // Yo sabai classes sabai seperate file hunu parcha hai subodh
+    public class OrderCreateDTO
+    {
+        [Required]
+>>>>>>> 0a09c6996bea36f9536a19920a05d2b0f48dbaaa
         public List<OrderItemDTO> OrderItems { get; set; }
     }
 
@@ -40,4 +51,8 @@ namespace BookStore.DTO
         public decimal FinalAmount { get; set; }
         public List<OrderItemDTO> OrderItems { get; set; }
     }
+<<<<<<< HEAD
 } 
+=======
+}
+>>>>>>> 0a09c6996bea36f9536a19920a05d2b0f48dbaaa

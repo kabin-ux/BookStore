@@ -16,8 +16,17 @@ namespace BookStore.Services
             _jwtTokenService = jwtTokenService;
         }
 
-        public async Task<bool> AddUser(UserRegisterDTO userDTO)
+        public async Task<bool> AddUser(UserRegisterDTO userDTO, string? creatorRole = null)
         {
+            string roleToAssign = "Member";
+
+            // Admin registering a user with specific role
+            if (!string.IsNullOrEmpty(creatorRole) && creatorRole == "Admin" &&
+                !string.IsNullOrEmpty(userDTO.Role) && (userDTO.Role == "Admin" || userDTO.Role == "Staff"))
+            {
+                roleToAssign = userDTO.Role;
+            }
+
             var newUser = new Users
             {
                 UserName = userDTO.UserName,
@@ -25,14 +34,14 @@ namespace BookStore.Services
                 FirstName = userDTO.FirstName,
                 LastName = userDTO.LastName,
                 ContactNumber = userDTO.ContactNumber,
-                MembershipId = userDTO.MembershipId
+                MembershipId = (roleToAssign == "Member") ? Guid.NewGuid().ToString() : null
             };
 
             var result = await _userManager.CreateAsync(newUser, userDTO.Password);
 
             if (result.Succeeded)
             {
-                await _userManager.AddToRoleAsync(newUser, "User");
+                await _userManager.AddToRoleAsync(newUser, roleToAssign);
                 return true;
             }
             else
@@ -44,6 +53,7 @@ namespace BookStore.Services
                 return false;
             }
         }
+
 
         public async Task<(string? token, Users? user, IList<string> roles)> UserLoginWithUserData(LoginDTO loginCredential)
         {

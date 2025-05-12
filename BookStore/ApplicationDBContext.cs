@@ -25,13 +25,13 @@ namespace BookStore
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            // Seeeding all roles
             builder.Entity<Roles>().HasData(
-                   new Roles
-                   {
-                       Id = 1,
-                       Name = "SuperAdmin"
-                   }
-               );
+                new Roles { Id = 1, Name = "Admin", NormalizedName = "ADMIN" },
+                new Roles { Id = 2, Name = "Member", NormalizedName = "MEMBER" },
+                new Roles { Id = 3, Name = "Staff", NormalizedName = "STAFF" }
+            );
         }
     }
 }

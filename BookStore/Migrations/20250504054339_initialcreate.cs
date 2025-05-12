@@ -4,10 +4,12 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace BookStore.Migrations
 {
     /// <inheritdoc />
-    public partial class intial1 : Migration
+    public partial class initialcreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -36,7 +38,7 @@ namespace BookStore.Migrations
                     FirstName = table.Column<string>(type: "text", nullable: false),
                     LastName = table.Column<string>(type: "text", nullable: false),
                     ContactNumber = table.Column<string>(type: "text", nullable: false),
-                    MembershipId = table.Column<string>(type: "text", nullable: false),
+                    MembershipId = table.Column<string>(type: "text", nullable: true),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -370,7 +372,12 @@ namespace BookStore.Migrations
             migrationBuilder.InsertData(
                 table: "AspNetRoles",
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
-                values: new object[] { 1L, null, "SuperAdmin", null });
+                values: new object[,]
+                {
+                    { 1L, null, "Admin", "ADMIN" },
+                    { 2L, null, "Member", "MEMBER" },
+                    { 3L, null, "Staff", "STAFF" }
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Announcements_UserId",

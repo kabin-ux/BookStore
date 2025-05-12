@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BookStore.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    [Migration("20250504072006_initial")]
-    partial class initial
+    [Migration("20250504054339_initialcreate")]
+    partial class initialcreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -292,7 +292,20 @@ namespace BookStore.Migrations
                         new
                         {
                             Id = 1L,
-                            Name = "SuperAdmin"
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = 2L,
+                            Name = "Member",
+                            NormalizedName = "MEMBER"
+                        },
+                        new
+                        {
+                            Id = 3L,
+                            Name = "Staff",
+                            NormalizedName = "STAFF"
                         });
                 });
 

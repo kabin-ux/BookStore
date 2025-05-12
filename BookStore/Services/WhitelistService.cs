@@ -46,7 +46,8 @@ namespace BookStore.Services
                     w.Book.Author,
                     w.IsAvailable,
                     w.DateAdded,
-                    w.Book.Price
+                    w.Book.Price,
+                    w.Book.ImagePath
                 }).ToListAsync();
 
             return list.Cast<object>().ToList(); // cast to match return type

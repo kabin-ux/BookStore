@@ -15,11 +15,7 @@ namespace BookStore.Entities
         public decimal Price { get; set; }
 
         [Required]
-<<<<<<< HEAD
-        [ForeignKey("Order")]git 
-=======
         [ForeignKey("Order")]
->>>>>>> 0a09c6996bea36f9536a19920a05d2b0f48dbaaa
         public int OrderId { get; set; }
         public Orders Order { get; set; }
 

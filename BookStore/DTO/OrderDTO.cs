@@ -1,21 +1,3 @@
-<<<<<<< HEAD
-using System.ComponentModel.DataAnnotations;
-
-namespace BookStore.DTO
-{
-    public class OrderCreateDTO
-    {
-        [Required]
-        public decimal BillAmount { get; set; }
-
-        [Required]
-        public decimal DiscountApplied { get; set; }
-
-        [Required]
-        public decimal FinalAmount { get; set; }
-
-        [Required]
-=======
 ﻿using System.ComponentModel.DataAnnotations;
 
 namespace BookStore.DTO
@@ -24,7 +6,6 @@ namespace BookStore.DTO
     public class OrderCreateDTO
     {
         [Required]
->>>>>>> 0a09c6996bea36f9536a19920a05d2b0f48dbaaa
         public List<OrderItemDTO> OrderItems { get; set; }
     }
 

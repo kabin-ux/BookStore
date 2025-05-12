@@ -119,6 +119,7 @@ namespace BookStore.Services
             var newBook = new Books
             {
                 Title = bookDTO.Title,
+                Description = bookDTO.Description,
                 Author = bookDTO.Author,
                 Genre = bookDTO.Genre,
                 Language = bookDTO.Language,
@@ -128,8 +129,11 @@ namespace BookStore.Services
                 StockQuantity = bookDTO.StockQuantity,
                 Price = bookDTO.Price,
                 IsAvailable = bookDTO.IsAvailable,
-                PublicationDate = bookDTO.PublicationDate.Date.AddHours(12), 
-                ImagePath = imagePath
+                IsStoreOnlyAccess = bookDTO.IsStoreOnlyAccess,
+                PublicationDate = bookDTO.PublicationDate, 
+                ArrivalDate = bookDTO.ArrivalDate,
+                ImagePath = imagePath,
+
             };
 
             try
@@ -173,6 +177,7 @@ namespace BookStore.Services
             }
 
             book.Title = bookDTO.Title;
+            book.Description = bookDTO.Description;
             book.Author = bookDTO.Author;
             book.Genre = bookDTO.Genre;
             book.Language = bookDTO.Language;
@@ -182,8 +187,11 @@ namespace BookStore.Services
             book.StockQuantity = bookDTO.StockQuantity;
             book.Price = bookDTO.Price;
             book.IsAvailable = bookDTO.IsAvailable;
-            book.PublicationDate = bookDTO.PublicationDate.Date.AddHours(12);
+            book.IsStoreOnlyAccess = bookDTO.IsStoreOnlyAccess;
+            book.PublicationDate = bookDTO.PublicationDate.Date.AddHours(0);
+            book.ArrivalDate = bookDTO.ArrivalDate.Date.AddHours(0);
             book.ImagePath = imagePath;
+
 
             await _context.SaveChangesAsync();
             return book;

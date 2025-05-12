@@ -1,18 +1,19 @@
-﻿using BookStore.Services;
+﻿using BookStore.DTO;
+using BookStore.Services;
 using Microsoft.AspNetCore.SignalR;
 
 namespace BookStore.WebSocket
 {
     public sealed class ChatHub : Hub<IChatClient>
     {
-        public override async Task OnConnectedAsync()
+        public async Task SendNotification(string message)
         {
-            await Clients.All.ReceiveMessage($"{Context.ConnectionId} has joined");
+            await Clients.All.ReceiveMessage($"just bought {message}!");
+        }
+        public async Task SendOrderNotification(OrderNotificationDTO notification)
+        {
+            await Clients.All.ReceiveOrderNotification(notification);
         }
 
-        public async Task sendMessage(string message)
-        {
-            await Clients.All.ReceiveMessage($"{Context.ConnectionId}: ${message}");
-        }
     }
 }

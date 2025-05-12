@@ -21,18 +21,29 @@ namespace BookStore.Controllers
         }
 
         [HttpPost("register-user")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> RegisterUserByAdmin(UserRegisterDTO user)
+        [AllowAnonymous]
+        public async Task<IActionResult> RegisterUser(UserRegisterDTO user)
         {
+
             var isUserExist = await _userService.FindUser(user.Email);
-            if (isUserExist) return BadRequest("User already exists.");
 
-            var isUserCreated = await _userService.AddUser(user, "Admin");
-            if (!isUserCreated) return BadRequest("Unable to create user.");
-
-            return Ok(new BaseResponse<object>(200, true, "User created successfully"));
+            if (isUserExist == false)
+            {
+                var isUserCreated = await _userService.AddUser(user);
+                if (isUserCreated == false)
+                {
+                    return BadRequest("unable to create a user.");
+                }
+                else
+                {
+                    return Ok((new BaseResponse<Object>(200, true, "User created successfully")));
+                }
+            }
+            else
+            {
+                return BadRequest("User already exist.");
+            }
         }
-
 
         [HttpPost("public-register")]
         [AllowAnonymous]
@@ -41,13 +52,11 @@ namespace BookStore.Controllers
             var isUserExist = await _userService.FindUser(user.Email);
             if (isUserExist) return BadRequest("User already exists.");
 
-            // Role is not passed intentionally
             var isUserCreated = await _userService.AddUser(user);
             if (!isUserCreated) return BadRequest("Unable to create user.");
 
             return Ok(new BaseResponse<object>(200, true, "User created successfully"));
         }
-
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDTO loginCredential)
@@ -77,6 +86,14 @@ namespace BookStore.Controllers
             return Unauthorized("Invalid email or password.");
         }
 
+        [HttpGet("all")]
+        [Authorize(Roles = "Staff")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            var users = await _userService.GetAllUsersAsync();
+            return Ok(users);
+        }
+
 
         [HttpGet("ping")]
         public IActionResult Ping() => Ok("User controller is reachable.");
@@ -90,4 +107,3 @@ namespace BookStore.Controllers
 
     }
 }
-

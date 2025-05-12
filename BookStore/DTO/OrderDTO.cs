@@ -19,10 +19,15 @@ namespace BookStore.DTO
 
         [Required]
         public decimal Price { get; set; }
+
+        public string BookTitle { get; set; }
+
     }
 
     public class OrderResponseDTO
     {
+        public long UserId { get; set; }
+        public string UserName { get; set; }
         public int OrderId { get; set; }
         public DateTime OrderDate { get; set; }
         public string Status { get; set; }

@@ -1,6 +1,8 @@
 ﻿using BookStore.DTO;
 using BookStore.Entities;
+using BookStore.WebSocket;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookStore.Services
@@ -11,12 +13,14 @@ namespace BookStore.Services
         private readonly ApplicationDBContext _context;
         private readonly IEmailService _emailService;
         private readonly ICartService _cartService;
+        private readonly IHubContext<ChatHub, IChatClient> _hubContext;
 
-        public OrdersService(ApplicationDBContext context, IEmailService emailService, ICartService cartService)
+        public OrdersService(ApplicationDBContext context, IEmailService emailService, ICartService cartService, IHubContext<ChatHub, IChatClient> hubContext)
         {
             _context = context;
             _emailService = emailService;
             _cartService = cartService;
+            _hubContext = hubContext;
         }
 
         public async Task<String> CreateOrder(OrderCreateDTO orderDto, long userId, string email)
@@ -24,7 +28,7 @@ namespace BookStore.Services
             var code = _emailService.GenerateCode();
             string discountMessage = "";
 
-            // Calculate initial bill amount using current book prices from database
+            // Calculate initial amount using current book prices from database
             Dictionary<long, decimal> bookPrices = new();
             decimal billAmount = 0;
             foreach (var orderItem in orderDto.OrderItems)
@@ -148,11 +152,15 @@ namespace BookStore.Services
         {
             var orders = await _context.Orders
                 .Where(o => o.UserId == userId)
-                .Include(o => o.OrderItems)
-                .ToListAsync();
+                .Include(o => o.User) // Include the User navigation property
+                 .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Book)
+            .ToListAsync();
 
             var response = orders.Select(o => new OrderResponseDTO
             {
+                UserId = o.UserId,
+                UserName = o.User.UserName,
                 OrderId = o.OrderId,
                 OrderDate = o.OrderDate,
                 Status = o.Status,
@@ -163,12 +171,90 @@ namespace BookStore.Services
                 OrderItems = o.OrderItems.Select(oi => new OrderItemDTO
                 {
                     BookId = oi.BookId,
+                    BookTitle = oi.Book.Title,
                     Quantity = oi.Quantity,
                     Price = oi.Price
                 }).ToList()
             });
 
             return response;
+        }
+
+
+        public async Task<OrderResponseDTO> ProcessClaimCode(ClaimOrderDTO claimOrderDto)
+        {
+            var order = await _context.Orders
+                .Include(o => o.User)
+                .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Book)
+                .FirstOrDefaultAsync(o => o.ClaimCode == claimOrderDto.ClaimCode);
+
+            if (order == null)
+            {
+                throw new Exception("Invalid claim code");
+            }
+
+            if (order.Status == "Completed")
+            {
+                throw new Exception("Order has already been claimed");
+            }
+
+            if (order.Status == "Cancelled")
+            {
+                throw new Exception("Cannot claim a cancelled order");
+            }
+
+            order.Status = "Completed";
+            await _context.SaveChangesAsync();
+
+            // Re-fetch order with complete navigation properties for safe SignalR notification
+            var fullOrder = await _context.Orders
+                .Include(o => o.User)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Book)
+                .FirstOrDefaultAsync(o => o.OrderId == order.OrderId);
+
+            if (fullOrder != null)
+            {
+                await BroadCastOrderNotification(fullOrder);
+            }
+
+            return new OrderResponseDTO
+            {
+                UserId = order.UserId,
+                UserName = order.User.UserName,
+                OrderId = order.OrderId,
+                OrderDate = order.OrderDate,
+                Status = order.Status,
+                ClaimCode = order.ClaimCode,
+                BillAmount = order.BillAmount,
+                DiscountApplied = order.DiscountApplied,
+                FinalAmount = order.FinalAmount,
+                OrderItems = order.OrderItems.Select(oi => new OrderItemDTO
+                {
+                    BookId = oi.BookId,
+                    Quantity = oi.Quantity,
+                    Price = oi.Price,
+                    BookTitle = oi.Book.Title
+                }).ToList()
+            };
+        }
+
+        private async Task BroadCastOrderNotification(Orders order)
+        {
+            var notification = new OrderNotificationDTO
+            {
+                UserName = order.User.UserName,
+                OrderDate = order.OrderDate,
+                Items = order.OrderItems.Select(i => new OrderItemNotificationDTO
+                {
+                    BookTitle = i.Book.Title,
+                    Quantity = i.Quantity
+                }).ToList()
+            };
+
+            // Use the SendOrderNotification method of the hub
+            await _hubContext.Clients.All.ReceiveOrderNotification(notification);
         }
     }
 

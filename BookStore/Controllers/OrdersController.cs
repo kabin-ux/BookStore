@@ -1,5 +1,6 @@
 ﻿using BookStore.DTO;
 using BookStore.Entities;
+using BookStore.Migrations;
 using BookStore.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -92,5 +93,38 @@ namespace BookStore.Controllers
                 return BadRequest(new BaseResponse<string>(400, false, ex.Message));
             }
         }
+
+        [HttpPost("by-user-id")]
+        [Authorize(Roles = "Admin,Staff")]
+        public async Task<ActionResult<BaseResponse<object>>> GetOrdersByUserId([FromBody] UserIdRequestDTO request)
+        {
+            try
+            {
+                var orders = await _ordersService.GetUserOrders(request.UserId);
+
+                return Ok(new BaseResponse<object>(200, true, "User Orders Retrieved", orders));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new BaseResponse<string>(400, false, ex.Message));
+            }
+        }
+
+        [HttpPost("process-claim-code")]
+        [Authorize(Roles = "Staff")]
+        public async Task<ActionResult<OrderResponseDTO>> ProcessClaimCode([FromBody] ClaimOrderDTO claimOrderDto)
+        {
+            try
+            {
+                var order = await _ordersService.ProcessClaimCode(claimOrderDto);
+                return Ok(new BaseResponse<object>(200, true, "Claim Code Processed Successfully", order));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
     }
 }

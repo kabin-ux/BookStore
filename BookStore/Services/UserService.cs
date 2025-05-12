@@ -54,7 +54,6 @@ namespace BookStore.Services
             }
         }
 
-
         public async Task<(string? token, Users? user, IList<string> roles)> UserLoginWithUserData(LoginDTO loginCredential)
         {
             var user = await isUserExist(loginCredential.Email);
@@ -69,6 +68,10 @@ namespace BookStore.Services
                 }
             }
             return (null, null, new List<string>());
+        }
+        public async Task<List<Users>> GetAllUsersAsync()
+        {
+            return await Task.FromResult(_userManager.Users.ToList());
         }
 
 

@@ -73,7 +73,7 @@ namespace BookStore.Controllers
         }
 
         [HttpGet("all")]
-        [Authorize(Roles = "Staff")]
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> GetAllUsers()
         {
             var users = await _userService.GetAllUsersAsync();

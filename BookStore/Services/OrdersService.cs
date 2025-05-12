@@ -181,6 +181,8 @@ namespace BookStore.Services
         }
 
 
+
+
         public async Task<OrderResponseDTO> ProcessClaimCode(ClaimOrderDTO claimOrderDto)
         {
             var order = await _context.Orders
@@ -239,6 +241,34 @@ namespace BookStore.Services
                 }).ToList()
             };
         }
+
+        public async Task<string> DeleteOrder(int orderId)
+        {
+            var order = await _context.Orders
+                .Include(o => o.OrderItems)
+                .FirstOrDefaultAsync(o => o.OrderId == orderId);
+
+            if (order == null)
+            {
+                throw new Exception("Order not found");
+            }
+
+            if (order.Status == "Completed")
+            {
+                throw new Exception("Completed orders cannot be deleted");
+            }
+
+            // Remove related order items first
+            _context.OrderItems.RemoveRange(order.OrderItems);
+
+            // Remove the order
+            _context.Orders.Remove(order);
+
+            await _context.SaveChangesAsync();
+
+            return "Order deleted successfully";
+        }
+
 
         private async Task BroadCastOrderNotification(Orders order)
         {

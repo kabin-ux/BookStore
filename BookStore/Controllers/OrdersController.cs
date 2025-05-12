@@ -110,6 +110,23 @@ namespace BookStore.Controllers
             }
         }
 
+        [HttpPost("delete-order")]
+        [Authorize(Roles = "Admin,Staff")]
+        public async Task<ActionResult<BaseResponse<object>>> DeleteOrder([FromBody] DeleteOrderRequestDTO request)
+        {
+            try
+            {
+                var result = await _ordersService.DeleteOrder(request.OrderId);
+
+                return Ok(new BaseResponse<object>(200, true, result));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new BaseResponse<string>(400, false, ex.Message));
+            }
+        }
+
+
         [HttpPost("process-claim-code")]
         [Authorize(Roles = "Staff")]
         public async Task<ActionResult<OrderResponseDTO>> ProcessClaimCode([FromBody] ClaimOrderDTO claimOrderDto)

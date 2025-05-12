@@ -59,12 +59,12 @@ builder.Services.AddAuthentication(options =>
         RoleClaimType = ClaimTypes.Role
     };
 
-    //  Debug logging
+    // Debug logging
     options.Events = new JwtBearerEvents
     {
         OnAuthenticationFailed = context =>
         {
-            Console.WriteLine("❌ JWT AUTHENTICATION FAILED");
+            Console.WriteLine("JWT AUTHENTICATION FAILED");
             Console.WriteLine(context.Exception.Message);
             return Task.CompletedTask;
         },
@@ -75,10 +75,6 @@ builder.Services.AddAuthentication(options =>
         }
     };
 });
-
-
-
-
 
 builder.Services.AddAuthorization();
 
@@ -168,17 +164,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-//  Map routes
+app.UseStaticFiles();
+
 app.MapControllers();
-
-app.MapPost("notifications/all", async (
-    string content,
-    IHubContext<ChatHub, IChatClient> context) =>
-{
-    await context.Clients.All.ReceiveMessage(content);
-
-    return Results.NoContent();
-});
 
 app.MapHub<ChatHub>("/chat-hub");
 

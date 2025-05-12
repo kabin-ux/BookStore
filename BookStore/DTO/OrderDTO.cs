@@ -19,6 +19,9 @@ namespace BookStore.DTO
 
         [Required]
         public decimal Price { get; set; }
+
+        public string BookTitle { get; set; }
+
     }
 
     public class OrderResponseDTO

@@ -1,7 +1,9 @@
 ﻿using BookStore.DTO;
 using BookStore.Entities;
 using BookStore.Exceptions;
+using BookStore.WebSocket;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookStore.Services
@@ -11,12 +13,14 @@ namespace BookStore.Services
         private readonly ApplicationDBContext _context;
         private readonly IEmailService _emailService;
         private readonly ICartService _cartService;
+        private readonly IHubContext<ChatHub, IChatClient> _hubContext;
 
-        public OrdersService(ApplicationDBContext context, IEmailService emailService, ICartService cartService)
+        public OrdersService(ApplicationDBContext context, IEmailService emailService, ICartService cartService, IHubContext<ChatHub, IChatClient> hubContext)
         {
             _context = context;
             _emailService = emailService;
-            _cartService = cartService;
+            _cartService = cartService; 
+            _hubContext = hubContext;
         }
 
         public async Task<String> CreateOrder(OrderCreateDTO orderDto, long userId, string email)
@@ -164,6 +168,65 @@ namespace BookStore.Services
 
             return response;
         }
+        public async Task<OrderResponseDTO> ProcessClaimCode(ClaimOrderDTO claimOrderDto)
+        {
+            var order = await _context.Orders
+                .Include(o => o.User)
+                .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Book)
+                .FirstOrDefaultAsync(o => o.ClaimCode == claimOrderDto.ClaimCode);
+
+            if (order == null)
+            {
+                throw new ValidationException("Invalid claim code");
+            }
+
+            if (order.Status == "Completed")
+            {
+                throw new ValidationException("Order has already been claimed");
+            }
+
+            if (order.Status == "Cancelled")
+            {
+                throw new ForbiddenException("Cannot claim a cancelled order");
+            }
+
+            order.Status = "Completed";
+            await _context.SaveChangesAsync();
+
+            // Re-fetch order with complete navigation properties for safe SignalR notification
+            var fullOrder = await _context.Orders
+                .Include(o => o.User)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Book)
+                .FirstOrDefaultAsync(o => o.OrderId == order.OrderId);
+
+            if (fullOrder != null)
+            {
+                await BroadCastOrderNotification(fullOrder);
+            }
+
+            return new OrderResponseDTO
+            {
+                UserId = order.UserId,
+                UserName = order.User.UserName,
+                OrderId = order.OrderId,
+                OrderDate = order.OrderDate,
+                Status = order.Status,
+                ClaimCode = order.ClaimCode,
+                BillAmount = order.BillAmount,
+                DiscountApplied = order.DiscountApplied,
+                FinalAmount = order.FinalAmount,
+                OrderItems = order.OrderItems.Select(oi => new OrderItemDTO
+                {
+                    BookId = oi.BookId,
+                    Quantity = oi.Quantity,
+                    Price = oi.Price,
+                    BookTitle = oi.Book.Title
+                }).ToList()
+            };
+        }
+
         private bool IsValidEmail(string email)
         {
             try
@@ -175,6 +238,30 @@ namespace BookStore.Services
             {
                 return false;
             }
+        }
+        public async Task<string> DeleteOrder(int orderId)
+        {
+            var order = await _context.Orders
+                .Include(o => o.OrderItems)
+                .FirstOrDefaultAsync(o => o.OrderId == orderId);
+
+            if (order == null)
+            {
+                throw new NotFoundException("Order not found");
+            }
+
+            if (order.Status == "Completed")
+            {
+                throw new ForbiddenException("Completed orders cannot be deleted");
+            }
+
+            _context.OrderItems.RemoveRange(order.OrderItems);
+
+            _context.Orders.Remove(order);
+
+            await _context.SaveChangesAsync();
+
+            return "Order deleted successfully";
         }
         private async Task ValidateItemsInCartAsync(long userId, List<OrderItemDTO> orderItems)
         {
@@ -193,6 +280,22 @@ namespace BookStore.Services
                     throw new ValidationException($"Requested quantity ({orderItem.Quantity}) for book ID {orderItem.BookId} exceeds available quantity ({cartItem.Quantity}) in your cart");
                 }
             }
+        }
+        private async Task BroadCastOrderNotification(Orders order)
+        {
+            var notification = new OrderNotificationDTO
+            {
+                UserName = order.User.UserName,
+                OrderDate = order.OrderDate,
+                Items = order.OrderItems.Select(i => new OrderItemNotificationDTO
+                {
+                    BookTitle = i.Book.Title,
+                    Quantity = i.Quantity
+                }).ToList()
+            };
+
+            // Use the SendOrderNotification method of the hub
+            await _hubContext.Clients.All.ReceiveOrderNotification(notification);
         }
     }
 }

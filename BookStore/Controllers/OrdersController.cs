@@ -54,5 +54,25 @@ namespace BookStore.Controllers
             var orders = await _ordersService.GetUserOrders(userId);
             return Ok(new BaseResponse<object>(200, true, "Generated User Orders", orders));
         }
+        [HttpPost("delete-order")]
+        [Authorize(Roles = "Admin,Staff")]
+        public async Task<ActionResult<BaseResponse<object>>> DeleteOrder([FromBody] DeleteOrderRequestDTO request)
+        {
+                var result = await _ordersService.DeleteOrder(request.OrderId);
+
+                return Ok(new BaseResponse<object>(200, true, result));
+            
+        }
+
+
+        [HttpPost("process-claim-code")]
+        [Authorize(Roles = "Staff")]
+        public async Task<ActionResult<OrderResponseDTO>> ProcessClaimCode([FromBody] ClaimOrderDTO claimOrderDto)
+        {
+
+                var order = await _ordersService.ProcessClaimCode(claimOrderDto);
+                return Ok(new BaseResponse<object>(200, true, "Claim Code Processed Successfully", order));
+            
+        }
     }
 }

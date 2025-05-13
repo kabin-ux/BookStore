@@ -32,6 +32,7 @@ builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IOrdersService, OrdersService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<IBannerService, BannerService>();
 
 //  JWT Authentication
 var jwtConfig = builder.Configuration.GetSection(JwtOptions.SectionName);

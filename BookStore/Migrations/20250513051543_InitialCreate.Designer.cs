@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BookStore.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    [Migration("20250505041601_AddOrderItemsNavigationAndPrice")]
-    partial class AddOrderItemsNavigationAndPrice
+    [Migration("20250513051543_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -57,54 +57,46 @@ namespace BookStore.Migrations
                     b.ToTable("Announcements");
                 });
 
-            modelBuilder.Entity("BookStore.Entities.Books", b =>
+            modelBuilder.Entity("BookStore.Entities.Banners", b =>
                 {
-                    b.Property<int>("BookId")
+                    b.Property<int>("BannerId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("BookId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("BannerId"));
 
-                    b.Property<string>("Author")
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("CreatedByUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Format")
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ImageUrl")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Genre")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ISBN")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsAvailable")
+                    b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Language")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("Publisher")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("StockQuantity")
-                        .HasColumnType("integer");
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("BookId");
+                    b.HasKey("BannerId");
 
-                    b.ToTable("Books");
+                    b.HasIndex("CreatedByUserId");
+
+                    b.ToTable("Banners");
                 });
 
             modelBuilder.Entity("BookStore.Entities.Carts", b =>
@@ -295,7 +287,20 @@ namespace BookStore.Migrations
                         new
                         {
                             Id = 1L,
-                            Name = "SuperAdmin"
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = 2L,
+                            Name = "Member",
+                            NormalizedName = "MEMBER"
+                        },
+                        new
+                        {
+                            Id = 3L,
+                            Name = "Staff",
+                            NormalizedName = "STAFF"
                         });
                 });
 
@@ -408,6 +413,62 @@ namespace BookStore.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Whitelists");
+                });
+
+            modelBuilder.Entity("Books", b =>
+                {
+                    b.Property<int>("BookId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("BookId"));
+
+                    b.Property<string>("Author")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Format")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Genre")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ISBN")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ImagePath")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("PublicationDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Publisher")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("StockQuantity")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("BookId");
+
+                    b.ToTable("Books");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<long>", b =>
@@ -524,9 +585,20 @@ namespace BookStore.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("BookStore.Entities.Banners", b =>
+                {
+                    b.HasOne("BookStore.Entities.Users", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByUser");
+                });
+
             modelBuilder.Entity("BookStore.Entities.Carts", b =>
                 {
-                    b.HasOne("BookStore.Entities.Books", "Book")
+                    b.HasOne("Books", "Book")
                         .WithMany()
                         .HasForeignKey("BookId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -545,7 +617,7 @@ namespace BookStore.Migrations
 
             modelBuilder.Entity("BookStore.Entities.Discounts", b =>
                 {
-                    b.HasOne("BookStore.Entities.Books", "Books")
+                    b.HasOne("Books", "Books")
                         .WithMany("Discounts")
                         .HasForeignKey("BookId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -556,7 +628,7 @@ namespace BookStore.Migrations
 
             modelBuilder.Entity("BookStore.Entities.OrderItem", b =>
                 {
-                    b.HasOne("BookStore.Entities.Books", "Book")
+                    b.HasOne("Books", "Book")
                         .WithMany()
                         .HasForeignKey("BookId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -586,7 +658,7 @@ namespace BookStore.Migrations
 
             modelBuilder.Entity("BookStore.Entities.Reviews", b =>
                 {
-                    b.HasOne("BookStore.Entities.Books", "Book")
+                    b.HasOne("Books", "Book")
                         .WithMany()
                         .HasForeignKey("BookId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -605,7 +677,7 @@ namespace BookStore.Migrations
 
             modelBuilder.Entity("BookStore.Entities.Whitelists", b =>
                 {
-                    b.HasOne("BookStore.Entities.Books", "Book")
+                    b.HasOne("Books", "Book")
                         .WithMany()
                         .HasForeignKey("BookId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -673,14 +745,14 @@ namespace BookStore.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("BookStore.Entities.Books", b =>
-                {
-                    b.Navigation("Discounts");
-                });
-
             modelBuilder.Entity("BookStore.Entities.Orders", b =>
                 {
                     b.Navigation("OrderItems");
+                });
+
+            modelBuilder.Entity("Books", b =>
+                {
+                    b.Navigation("Discounts");
                 });
 #pragma warning restore 612, 618
         }

@@ -11,12 +11,13 @@ namespace BookStore.Services
         {
             _config = config;
         }
+
         public string GenerateCode()
         {
             return new Random().Next(100000, 999999).ToString();
         }
 
-        public async Task SendEmailAsync(string code, string toEmail)
+        public async Task SendOrderConfirmationAsync(string code, string toEmail, long orderId, decimal billAmount, decimal finalAmount)
         {
             if (string.IsNullOrWhiteSpace(code))
                 throw new ArgumentNullException(nameof(code), "Verification code is null or empty");
@@ -43,14 +44,22 @@ namespace BookStore.Services
             var message = new MailMessage
             {
                 From = new MailAddress(from),
-                Subject = "Your Verification Code",
-                Body = $"Your 6-digit verification code is: {code}",
+                Subject = "Your Order Confirmation",
+                Body = $@"
+                    Thank you for your order!
+                    
+                    Order ID: {orderId}
+                    Verification Code: {code}
+                    Bill Amount: Rs.{billAmount:F2}
+                    Final Amount After Discount: Rs.{finalAmount:F2}
+                    
+                    Please keep this information for your records.
+                ",
                 IsBodyHtml = false,
             };
             message.To.Add(toEmail);
 
             await smtpClient.SendMailAsync(message);
-         
         }
     }
 }

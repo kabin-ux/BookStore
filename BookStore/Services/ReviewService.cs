@@ -1,6 +1,7 @@
 ﻿using BookStore.DTO;
 using BookStore.Entities;
 using Microsoft.EntityFrameworkCore;
+using BookStore.Exceptions;
 
 namespace BookStore.Services
 {
@@ -24,7 +25,7 @@ namespace BookStore.Services
             var hasPurchased = await HasUserPurchasedBook(userId, reviewDto.BookId);
             if (!hasPurchased)
             {
-                throw new Exception("You can only review books you've purchased.");
+                throw new ForbiddenException("You can only review books you've purchased.");
             }
 
             var review = new Reviews
@@ -46,12 +47,12 @@ namespace BookStore.Services
             var review = await _context.Reviews.FirstOrDefaultAsync(r => r.ReviewId == reviewId);
             if (review == null)
             {
-                throw new Exception("Review not found.");
+                throw new NotFoundException("Review not found.");
             }
 
             if (review.UserId != userId)
             {
-                throw new Exception("You can only edit your own reviews.");
+                throw new ForbiddenException("You can only edit your own reviews.");
             }
 
             review.Rating = reviewDto.Rating;
@@ -79,12 +80,12 @@ namespace BookStore.Services
             var review = await _context.Reviews.FirstOrDefaultAsync(r => r.ReviewId == reviewId);
             if (review == null)
             {
-                throw new Exception("Review not found.");
+                throw new NotFoundException("Review not found.");
             }
 
             if (review.UserId != userId)
             {
-                throw new Exception("You can only delete your own reviews.");
+                throw new ForbiddenException("You can only delete your own reviews.");
             }
 
             _context.Reviews.Remove(review);

@@ -1,4 +1,5 @@
 ﻿using BookStore.Entities;
+using BookStore.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookStore.Services
@@ -15,7 +16,7 @@ namespace BookStore.Services
         public async Task AddOneToCartAsync(Users user, int bookId)
         {
             var book = await _context.Books.FindAsync(bookId);
-            if (book == null) throw new Exception("Book not found");
+            if (book == null) throw new NotFoundException("Book not found");
 
             var cartEntry = await _context.Carts.FirstOrDefaultAsync(c => c.UserId == user.Id && c.BookId == bookId);
 
@@ -60,7 +61,7 @@ namespace BookStore.Services
         public async Task<bool> RemoveFromCartAsync(Users user, int bookId)
         {
             var entry = await _context.Carts.FirstOrDefaultAsync(c => c.UserId == user.Id && c.BookId == bookId);
-            if (entry == null) throw new Exception("Book not in cart");
+            if (entry == null) throw new NotFoundException("Book not in cart");
 
             _context.Carts.Remove(entry);
 
@@ -71,7 +72,7 @@ namespace BookStore.Services
         public async Task<bool> RemoveOneItemFromCartAsync(Users user, int bookId)
         {
             var entry = await _context.Carts.FirstOrDefaultAsync(c => c.UserId == user.Id && c.BookId == bookId);
-            if (entry == null) throw new Exception("Book not in cart");
+            if (entry == null) throw new NotFoundException("Book not in cart");
 
             if (entry.Quantity > 1)
             {
@@ -90,7 +91,8 @@ namespace BookStore.Services
         public async Task AddCartAsync(Users user, int bookId)
         {
             var book = await _context.Books.FindAsync(bookId);
-            if (book == null) throw new Exception("Book not found");
+            if (book == null) throw new NotFoundException("Book not found");
+
 
             var cartbook = await _context.Carts.FirstOrDefaultAsync(c => c.UserId == user.Id && c.BookId == bookId);
 
@@ -126,11 +128,11 @@ namespace BookStore.Services
 
             if (entry == null)
             {
-                throw new Exception("Book not in cart");
+                throw new NotFoundException("Book not in cart");
             }
             if (quantityToRemove > entry.Quantity)
             {
-                throw new Exception("Quantity to remove is greater than the quantity in the cart");
+                throw new ValidationException("Quantity to remove is greater than the quantity in the cart");
             }
 
             if (entry.Quantity > quantityToRemove)

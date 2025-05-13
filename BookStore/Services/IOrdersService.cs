@@ -9,6 +9,8 @@ namespace BookStore.Services
         Task<String> CreateOrder(OrderCreateDTO orderDto, long userId, string email);
         Task<String> CancelOrder(int orderId, long userId);
         Task<IEnumerable<OrderResponseDTO>> GetUserOrders(long userId);
+
         Task<OrderResponseDTO> ProcessClaimCode(ClaimOrderDTO claimOrderDTO);
+        Task<String> DeleteOrder(int orderId);
     }
 }

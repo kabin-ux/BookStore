@@ -74,6 +74,12 @@ namespace BookStore.Services
                     case "price_desc":
                         query = query.OrderByDescending(b => b.Price);
                         break;
+                    case "pub_date_asc":
+                        query = query.OrderBy(b => b.PublicationDate);
+                        break;
+                    case "pub_date_desc":
+                        query = query.OrderByDescending(b => b.PublicationDate);
+                        break;
                 }
             }
 

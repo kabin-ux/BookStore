@@ -8,7 +8,7 @@ namespace BookStore.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Member")]
+    [Authorize(Roles = "Admin")]
     public class DiscountsController : ControllerBase
     {
         private readonly IDiscountService _discountService;
@@ -18,7 +18,7 @@ namespace BookStore.Controllers
             _discountService = discountService;
         }
 
-        [HttpPost]
+        [HttpPost("create-discount")]
         public async Task<IActionResult> CreateDiscount(DiscountCreateDTO dto)
         {
             if (!ModelState.IsValid)
@@ -28,20 +28,20 @@ namespace BookStore.Controllers
             return Ok(new BaseResponse<object>(200,true,"Created Discount",result));
         }
 
-        [HttpGet]
+        [HttpGet("get-all-discount")]
         public async Task<IActionResult> GetAllDiscounts()
         {
             var result = await _discountService.GetAllDiscountsAsync();
             return Ok(new BaseResponse<object>(200,true," All Discounted Books",result));
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("delete-discount/{id}")]
         public async Task<IActionResult> DeleteDiscount(int id)
         {
             await _discountService.DeleteDiscountAsync(id);
             return Ok(new BaseResponse<object>(200,true,"Discount deleted successfully"));
         }
-        [HttpPut]
+        [HttpPut("update-discount")]
         public async Task<IActionResult> UpdateDiscount(DiscountUpdateDTO dto)
         {
             var updated = await _discountService.UpdateDiscountAsync(dto);

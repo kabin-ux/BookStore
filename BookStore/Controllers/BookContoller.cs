@@ -21,7 +21,7 @@ namespace BookStore.Controllers
         public async Task<ActionResult<List<Books>>> GetBooks([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             var books = await _bookService.GetBooks(pageNumber, pageSize);
-            return Ok(books);
+            return Ok(new BaseResponse<List<Books>>(200, true, "Books fetched successfully", books));
         }
 
         [HttpGet("{id}")]
@@ -29,22 +29,27 @@ namespace BookStore.Controllers
         {
             var book = await _bookService.GetBookById(id);
             if (book == null)
-                return NotFound();
+            {
+                return NotFound(new BaseResponse<Books>(404, false, "Book not found", null));
+            }
 
-            return Ok(book);
+            return Ok(new BaseResponse<Books>(200, true, "Book fetched successfully", book));
         }
 
         [HttpGet("search")]
-        public async Task<ActionResult<PagedResult<Books>>> SearchBooks(
-            [FromQuery] string? search,
-            [FromQuery] string? sort,
-            [FromQuery] string? author,
-            [FromQuery] string? genre,
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetBooks([FromQuery] BookSearchParams queryParams)
         {
-            var result = await _bookService.SearchBooks(search, sort, author, genre, pageNumber, pageSize);
-            return Ok(result);
+            var result = await _bookService.SearchBooks(queryParams);
+            //return Ok(result);
+
+            if (result != null)
+            {
+                return Ok((new BaseResponse<Object>(200, true, "Books fetched successfully", result)));
+            }
+            else
+            {
+                return BadRequest(new BaseResponse<object>(400, false, "Unable to fetch books", null));
+            }
         }
 
         [HttpPost]
@@ -54,19 +59,10 @@ namespace BookStore.Controllers
             var book = await _bookService.AddBook(bookDTO);
             if (book == null)
             {
-                return BadRequest(new
-                {
-                    message = "Failed to add book",
-                    success = false
-                });
+                return BadRequest(new BaseResponse<Books>(400, false, "Failed to add book", null));
             }
 
-            return Ok(new
-            {
-                message = "Book added successfully",
-                success = true,
-                data = book
-            });
+            return Ok(new BaseResponse<Books>(200, true, "Book added successfully", book));
         }
 
         [HttpPut("{id}")]
@@ -76,19 +72,10 @@ namespace BookStore.Controllers
             var updatedBook = await _bookService.UpdateBook(id, bookDTO);
             if (updatedBook == null)
             {
-                return NotFound(new
-                {
-                    message = "Book not found",
-                    success = false
-                });
+                return NotFound(new BaseResponse<Books>(404, false, "Book not found", null));
             }
 
-            return Ok(new
-            {
-                message = "Book updated successfully",
-                success = true,
-                data = updatedBook
-            });
+            return Ok(new BaseResponse<Books>(200, true, "Book updated successfully", updatedBook));
         }
 
         [HttpDelete("{id}")]
@@ -97,18 +84,19 @@ namespace BookStore.Controllers
             var deleted = await _bookService.DeleteBook(id);
             if (!deleted)
             {
-                return NotFound(new
-                {
-                    message = "Book not found",
-                    success = false
-                });
+                return NotFound(new BaseResponse<string>(404, false, "Book not found", null));
             }
 
-            return Ok(new
-            {
-                message = "Book deleted successfully",
-                success = true
-            });
+            return Ok(new BaseResponse<string>(200, true, "Book deleted successfully", null));
+        }
+
+        [HttpGet("authors")]
+        public async Task<IActionResult> GetAuthors()
+        {
+            var authors = await _bookService.GetUniqueAuthorsAsync();
+            var result = authors.Select(a => new { label = a, value = a }).ToList<object>();
+
+            return Ok(new BaseResponse<List<object>>(200, true, "Authors fetched successfully", result));
         }
     }
 }

@@ -35,32 +35,64 @@ namespace BookStore.Services
             public int CurrentItemCount { get; set; } 
         }
 
-        public async Task<PagedResult<Books>> SearchBooks(
-    string search, string sort, string author, string? genre, int pageNumber, int pageSize)
+        public async Task<PagedResult<Books>> SearchBooks(BookSearchParams filters)
         {
             var query = _context.Books.AsQueryable();
 
-            if (!string.IsNullOrEmpty(search))
+            if (!string.IsNullOrEmpty(filters.Search))
             {
-                var lowerSearch = search.ToLower();
+                var lowerSearch = filters.Search.ToLower();
                 query = query.Where(b =>
                     b.Title.ToLower().Contains(lowerSearch) ||
-                    b.Genre.ToLower().Contains(lowerSearch));
+                    b.ISBN.ToLower().Contains(lowerSearch));
             }
 
-            if (!string.IsNullOrEmpty(author))
+            if (!string.IsNullOrEmpty(filters.Author))
             {
-                query = query.Where(b => b.Author.ToLower().Contains(author.ToLower()));
+                query = query.Where(b => b.Author.ToLower() == filters.Author.ToLower());
             }
 
-            if (!string.IsNullOrEmpty(genre))
+            if (!string.IsNullOrEmpty(filters.Genre))
             {
-                query = query.Where(b => b.Genre.ToLower().Contains(genre.ToLower()));
+                query = query.Where(b => b.Genre.ToLower().Contains(filters.Genre.ToLower()));
             }
 
-            if (!string.IsNullOrEmpty(sort))
+            if (!string.IsNullOrEmpty(filters.Format))
             {
-                switch (sort.ToLower())
+                query = query.Where(b => b.Format.ToLower().Contains(filters.Format.ToLower()));
+            }
+
+            if (!string.IsNullOrEmpty(filters.Language))
+            {
+                query = query.Where(b => b.Language.ToLower().Contains(filters.Language.ToLower()));
+            }
+
+            if (!string.IsNullOrEmpty(filters.Availability))
+            {
+                switch (filters.Availability.ToLower())
+                {
+                    case "in_stock":
+                        query = query.Where(b => b.StockQuantity > 0);
+                        break;
+                    case "physical":
+                        query = query.Where(b => b.IsStoreOnlyAccess == true);
+                        break;
+                }
+            }
+
+            if (decimal.TryParse(filters.MinPrice, out var minPrice))
+            {
+                query = query.Where(b => b.Price >= minPrice);
+            }
+
+            if (decimal.TryParse(filters.MaxPrice, out var maxPrice))
+            {
+                query = query.Where(b => b.Price <= maxPrice);
+            }
+
+            if (!string.IsNullOrEmpty(filters.Sort))
+            {
+                switch (filters.Sort.ToLower())
                 {
                     case "title_desc":
                         query = query.OrderByDescending(b => b.Title);
@@ -83,12 +115,44 @@ namespace BookStore.Services
                 }
             }
 
+            if (!string.IsNullOrEmpty(filters.Filter))
+            {
+                var now = DateTime.UtcNow;
+
+                switch (filters.Filter.ToLower())
+                {
+                    case "new":
+                        var threeMonthsAgo = now.AddMonths(-3);
+                        query = query.Where(b => b.PublicationDate >= threeMonthsAgo);
+                        break;
+
+                    case "bestsellers":
+                        var bestSellingBookIds = await _context.OrderItems
+                            .Where(oi => oi.Order.Status.ToLower() == "completed")
+                            .GroupBy(oi => oi.BookId)
+                            .Where(g => g.Sum(oi => oi.Quantity) > 4)
+                            .Select(g => g.Key)
+                            .ToListAsync();
+
+                        query = query.Where(b => bestSellingBookIds.Contains(b.BookId));
+                        break;
+
+                    case "comingsoon":
+                        query = query.Where(b => b.ArrivalDate > now);
+                        break;
+
+                    //case "sale":
+                    //    query = query.Where(b => b.Discount > 0); 
+                    //    break;
+                }
+            }
+
             var totalCount = await query.CountAsync();
-            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            var totalPages = (int)Math.Ceiling(totalCount / (double)filters.PageSize);
 
             var items = await query
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
+                .Skip((filters.PageNumber - 1) * filters.PageSize)
+                .Take(filters.PageSize)
                 .ToListAsync();
 
             return new PagedResult<Books>
@@ -96,10 +160,11 @@ namespace BookStore.Services
                 Items = items,
                 TotalItems = totalCount,
                 TotalPages = totalPages,
-                PageSize = pageSize,
-                CurrentItemCount = items.Count 
+                PageSize = filters.PageSize,
+                CurrentItemCount = items.Count
             };
         }
+
 
         public async Task<Books> AddBook(BookCreateUpdateDTO bookDTO)
         {
@@ -215,5 +280,16 @@ namespace BookStore.Services
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<List<string>> GetUniqueAuthorsAsync()
+        {
+            return await _context.Books
+                .Where(b => !string.IsNullOrEmpty(b.Author))
+                .Select(b => b.Author.Trim())
+                .Distinct()
+                .OrderBy(a => a)
+                .ToListAsync();
+        }
+
     }
 }

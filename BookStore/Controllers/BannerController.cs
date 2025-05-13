@@ -19,6 +19,7 @@ namespace BookStore.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<BannerResponseDTO>>> GetActiveBanners()
         {
             var banners = await _bannerService.GetActiveBannersAsync();

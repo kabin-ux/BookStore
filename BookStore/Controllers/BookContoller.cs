@@ -2,7 +2,9 @@
 using BookStore.DTOs;
 using BookStore.Entities;
 using BookStore.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using static BookStore.Services.BookService;
 
 namespace BookStore.Controllers
@@ -43,7 +45,6 @@ namespace BookStore.Controllers
         public async Task<IActionResult> GetBooks([FromQuery] BookSearchParams queryParams)
         {
             var result = await _bookService.SearchBooks(queryParams);
-            //return Ok(result);
 
             if (result != null)
             {
@@ -56,6 +57,7 @@ namespace BookStore.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles="Admin")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> AddBook([FromForm] BookCreateUpdateDTO bookDTO)
         {
@@ -69,6 +71,7 @@ namespace BookStore.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UpdateBook(int id, [FromForm] BookCreateUpdateDTO bookDTO)
         {
@@ -82,6 +85,7 @@ namespace BookStore.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteBook(int id)
         {
             var deleted = await _bookService.DeleteBook(id);

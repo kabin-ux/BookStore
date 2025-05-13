@@ -71,7 +71,10 @@ namespace BookStore.Services
                     ReviewId = r.ReviewId,
                     Rating = r.Rating,
                     Comment = r.Comment,
-                    Date = r.Date
+                    Date = r.Date,
+                    BookId = r.BookId,
+                    UserId = r.UserId,
+                    UserName = _context.Users.Where(u => u.Id == r.UserId).Select(u => u.UserName).FirstOrDefault(),
                 })
                 .ToListAsync();
         }

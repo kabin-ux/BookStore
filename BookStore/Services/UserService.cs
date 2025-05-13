@@ -1,6 +1,7 @@
 ﻿using BookStore.DTO;
 using BookStore.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace BookStore.Services
 {
@@ -79,6 +80,12 @@ namespace BookStore.Services
         {
             return await _userManager.FindByEmailAsync(email);
         }
+
+        public async Task<bool> IsContactNumberTaken(string contactNumber)
+        {
+            return await _userManager.Users.AnyAsync(u => u.ContactNumber == contactNumber);
+        }
+
 
         public async Task<bool> FindUser(string email)
         {

@@ -50,10 +50,13 @@ namespace BookStore.Controllers
         public async Task<IActionResult> RegisterPublicUser(UserRegisterDTO user)
         {
             var isUserExist = await _userService.FindUser(user.Email);
-            if (isUserExist) return BadRequest("User already exists.");
+            if (isUserExist) return BadRequest(new BaseResponse<Books>(400, false, "User with this email already exists.", null));
+
+            var isContactTaken = await _userService.IsContactNumberTaken(user.ContactNumber);
+            if (isContactTaken) return BadRequest(new BaseResponse<Books>(400, false, "User with this contact number already exists.", null));
 
             var isUserCreated = await _userService.AddUser(user);
-            if (!isUserCreated) return BadRequest("Unable to create user.");
+            if (!isUserCreated) return BadRequest(new BaseResponse<Books>(400, false, "Unable to create user.", null)); 
 
             return Ok(new BaseResponse<object>(200, true, "User created successfully"));
         }

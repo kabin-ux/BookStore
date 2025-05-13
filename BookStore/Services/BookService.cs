@@ -177,6 +177,11 @@ namespace BookStore.Services
                         query = query.Where(b => bestSellingBookIds.Contains(b.BookId));
                         break;
 
+                    case "winners":
+                        query = query.Where(b => b.Description != null && b.Description.ToLower().Contains("award"));
+                        break;
+
+
                     case "comingsoon":
                         query = query.Where(b => b.ArrivalDate > now);
                         break;

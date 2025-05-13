@@ -10,5 +10,6 @@ namespace BookStore.Services
         Task<List<Users>> GetAllUsersAsync();
 
         Task<bool> FindUser(string email);
+        Task<bool> IsContactNumberTaken(string contactNumber);
     }
 }

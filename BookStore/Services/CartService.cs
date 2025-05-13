@@ -16,10 +16,18 @@ namespace BookStore.Services
 
         public async Task AddOneToCartAsync(Users user, int bookId)
         {
-            var book = await _context.Books.FindAsync(bookId);
-            if (book == null) throw new NotFoundException("Book not found");
+            var book = await _context.Books
+                .AsNoTracking() // Ensures fresh data is fetched and not cached
+                .FirstOrDefaultAsync(b => b.BookId == bookId);
 
-            var cartEntry = await _context.Carts.FirstOrDefaultAsync(c => c.UserId == user.Id && c.BookId == bookId);
+            if (book == null)
+                throw new NotFoundException("Book not found");
+
+            if (book.IsStoreOnlyAccess == true)
+                throw new InvalidOperationException("This book is available for in-store purchase only and cannot be added to the cart.");
+
+            var cartEntry = await _context.Carts
+                .FirstOrDefaultAsync(c => c.UserId == user.Id && c.BookId == bookId);
 
             if (cartEntry != null)
             {
@@ -39,7 +47,6 @@ namespace BookStore.Services
 
             await _context.SaveChangesAsync();
         }
-
 
         public async Task<List<object>> GetMyCartAsync(Users user)
         {

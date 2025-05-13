@@ -1,5 +1,7 @@
 ﻿using BookStore.DTO;
+using BookStore.DTOs;
 using BookStore.Entities;
+using BookStore.Helper;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookStore.Services
@@ -21,9 +23,45 @@ namespace BookStore.Services
                 .ToListAsync();
         }
 
-        public async Task<Books> GetBookById(int id)
+        public async Task<BookWithDiscountDTO?> GetBookById(int id)
         {
-            return await _context.Books.FindAsync(id);
+            var book = await _context.Books
+                .Include(b => b.Discounts)
+                .FirstOrDefaultAsync(b => b.BookId == id);
+
+            if (book == null)
+                return null;
+
+            var activeDiscount = DiscountHelper.GetActiveDiscount(book.Discounts);
+
+            return new BookWithDiscountDTO
+            {
+                BookId = book.BookId,
+                Title = book.Title,
+                Description = book.Description,
+                Author = book.Author,
+                Genre = book.Genre,
+                Language = book.Language,
+                Publisher = book.Publisher,
+                Format = book.Format,
+                ISBN = book.ISBN,
+                StockQuantity = book.StockQuantity,
+                Price = book.Price,
+                IsAvailable = book.IsAvailable,
+                IsStoreOnlyAccess = book.IsStoreOnlyAccess,
+                ImagePath = book.ImagePath,
+                PublicationDate = book.PublicationDate,
+                ArrivalDate = book.ArrivalDate,
+                ActiveDiscount = activeDiscount == null ? null : new DiscountDTO
+                {
+                    DiscountPercent = activeDiscount.DiscountPercent,
+                    DiscountedPrice = activeDiscount.DiscountedPrice,
+                    StartDate = activeDiscount.StartDate,
+                    EndDate = activeDiscount.EndDate,
+                    IsOnSale = activeDiscount.IsOnSale,
+
+                }
+            };
         }
 
         public class PagedResult<T>
@@ -35,9 +73,11 @@ namespace BookStore.Services
             public int CurrentItemCount { get; set; } 
         }
 
-        public async Task<PagedResult<Books>> SearchBooks(BookSearchParams filters)
+        public async Task<PagedResult<BookWithDiscountDTO>> SearchBooks(BookSearchParams filters)
         {
-            var query = _context.Books.AsQueryable();
+            var query = _context.Books
+                .Include(b => b.Discounts)
+                .AsQueryable();
 
             if (!string.IsNullOrEmpty(filters.Search))
             {
@@ -75,7 +115,7 @@ namespace BookStore.Services
                         query = query.Where(b => b.StockQuantity > 0);
                         break;
                     case "physical":
-                        query = query.Where(b => b.IsStoreOnlyAccess == true);
+                        query = query.Where(b => b.IsStoreOnlyAccess);
                         break;
                 }
             }
@@ -141,9 +181,14 @@ namespace BookStore.Services
                         query = query.Where(b => b.ArrivalDate > now);
                         break;
 
-                    //case "sale":
-                    //    query = query.Where(b => b.Discount > 0); 
-                    //    break;
+                    case "sale":
+                        var activeDiscounts = await _context.Discounts
+                            .Where(d => d.StartDate <= now && d.EndDate >= now)
+                            .Select(d => d.BookId)
+                            .ToListAsync();
+                        query = query.Where(b => activeDiscounts.Contains(b.BookId));
+                        break;
+
                 }
             }
 
@@ -155,13 +200,45 @@ namespace BookStore.Services
                 .Take(filters.PageSize)
                 .ToListAsync();
 
-            return new PagedResult<Books>
+            var itemDtos = items.Select(book =>
             {
-                Items = items,
+                var activeDiscount = DiscountHelper.GetActiveDiscount(book.Discounts);
+                return new BookWithDiscountDTO
+                {
+                    BookId = book.BookId,
+                    Title = book.Title,
+                    Description = book.Description,
+                    Author = book.Author,
+                    Genre = book.Genre,
+                    Language = book.Language,
+                    Publisher = book.Publisher,
+                    Format = book.Format,
+                    ISBN = book.ISBN,
+                    StockQuantity = book.StockQuantity,
+                    Price = book.Price,
+                    IsAvailable = book.IsAvailable,
+                    IsStoreOnlyAccess = book.IsStoreOnlyAccess,
+                    ImagePath = book.ImagePath,
+                    PublicationDate = book.PublicationDate,
+                    ArrivalDate = book.ArrivalDate,
+                    ActiveDiscount = activeDiscount == null ? null : new DiscountDTO
+                    {
+                        DiscountPercent = activeDiscount.DiscountPercent,
+                        DiscountedPrice = activeDiscount.DiscountedPrice,
+                        StartDate = activeDiscount.StartDate,
+                        EndDate = activeDiscount.EndDate,
+                        IsOnSale = activeDiscount.IsOnSale,
+                    }
+                };
+            }).ToList();
+
+            return new PagedResult<BookWithDiscountDTO>
+            {
+                Items = itemDtos,
                 TotalItems = totalCount,
                 TotalPages = totalPages,
                 PageSize = filters.PageSize,
-                CurrentItemCount = items.Count
+                CurrentItemCount = itemDtos.Count
             };
         }
 

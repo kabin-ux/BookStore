@@ -1,4 +1,5 @@
 ﻿using BookStore.DTO;
+using BookStore.DTOs;
 using BookStore.Entities;
 using BookStore.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -25,16 +26,18 @@ namespace BookStore.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Books>> GetBookById(int id)
+        public async Task<ActionResult<BaseResponse<BookWithDiscountDTO>>> GetBookById(int id)
         {
             var book = await _bookService.GetBookById(id);
+
             if (book == null)
             {
-                return NotFound(new BaseResponse<Books>(404, false, "Book not found", null));
+                return NotFound(new BaseResponse<BookWithDiscountDTO>(404, false, "Book not found", null));
             }
 
-            return Ok(new BaseResponse<Books>(200, true, "Book fetched successfully", book));
+            return Ok(new BaseResponse<BookWithDiscountDTO>(200, true, "Book fetched successfully", book));
         }
+
 
         [HttpGet("search")]
         public async Task<IActionResult> GetBooks([FromQuery] BookSearchParams queryParams)

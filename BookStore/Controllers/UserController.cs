@@ -21,7 +21,7 @@ namespace BookStore.Controllers
         }
 
         [HttpPost("register-user")]
-        [AllowAnonymous]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> RegisterUser(UserRegisterDTO user)
         {
 
@@ -87,7 +87,7 @@ namespace BookStore.Controllers
         }
 
         [HttpGet("all")]
-        [Authorize(Roles = "Staff")]
+        [Authorize(Roles = "Staff, Admin")]
         public async Task<IActionResult> GetAllUsers()
         {
             var users = await _userService.GetAllUsersAsync();

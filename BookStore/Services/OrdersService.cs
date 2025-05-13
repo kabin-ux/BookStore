@@ -1,8 +1,8 @@
 ﻿using BookStore.DTO;
 using BookStore.Entities;
 using BookStore.Exceptions;
+using BookStore.Helper;
 using BookStore.WebSocket;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,9 +23,16 @@ namespace BookStore.Services
             _hubContext = hubContext;
         }
 
-        public async Task<String> CreateOrder(OrderCreateDTO orderDto, long userId, string email)
+        public async Task<string> CreateOrder(OrderCreateDTO orderDto, long userId, string email)
         {
             await ValidateItemsInCartAsync(userId, orderDto.OrderItems);
+
+            if (string.IsNullOrEmpty(email))
+                throw new ValidationException("Email address is required");
+
+            if (!IsValidEmail(email))
+                throw new ValidationException("Invalid email address format");
+
             var code = _emailService.GenerateCode();
             string discountMessage = "";
 
@@ -34,13 +41,20 @@ namespace BookStore.Services
 
             foreach (var orderItem in orderDto.OrderItems)
             {
-                var book = await _context.Books.FindAsync(orderItem.BookId);
+                var book = await _context.Books
+                    .Include(b => b.Discounts)
+                    .FirstOrDefaultAsync(b => b.BookId == orderItem.BookId);
+
                 if (book == null)
-                {
                     throw new NotFoundException($"Book with ID {orderItem.BookId} not found");
-                }
-                billAmount += (orderItem.Quantity * book.Price);
-                bookPrices[orderItem.BookId] = book.Price;
+
+                var activeDiscount = DiscountHelper.GetActiveDiscount(book.Discounts);
+                var finalPrice = activeDiscount != null && activeDiscount.IsOnSale
+                    ? activeDiscount.DiscountedPrice
+                    : book.Price;
+
+                billAmount += orderItem.Quantity * finalPrice;
+                bookPrices[orderItem.BookId] = finalPrice;
             }
 
             int totalBooks = orderDto.OrderItems.Sum(item => item.Quantity);
@@ -66,6 +80,7 @@ namespace BookStore.Services
             decimal totalDiscount = quantityDiscount + loyaltyDiscount;
             decimal finalAmount = billAmount - totalDiscount;
 
+            // Clear quantity from cart
             foreach (var orderItem in orderDto.OrderItems)
             {
                 await _cartService.RemoveQuantityFromCartAsync(userId, orderItem.BookId, orderItem.Quantity);
@@ -81,12 +96,6 @@ namespace BookStore.Services
                 FinalAmount = finalAmount,
                 UserId = userId
             };
-
-            if (string.IsNullOrEmpty(email))
-                throw new ValidationException("Email address is required");
-
-            if (!IsValidEmail(email))
-                throw new ValidationException("Invalid email address format");
 
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
@@ -107,9 +116,12 @@ namespace BookStore.Services
             {
                 responseMessage += $" {discountMessage}Total discount: Rs.{totalDiscount:F2}. Final amount: Rs.{finalAmount:F2}";
             }
+
             await _emailService.SendOrderConfirmationAsync(code, email, order.OrderId, billAmount, finalAmount);
+
             return responseMessage;
         }
+
 
         public async Task<String> CancelOrder(int orderId, long userId)
         {
@@ -142,6 +154,7 @@ namespace BookStore.Services
             var orders = await _context.Orders
                 .Where(o => o.UserId == userId)
                 .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Book)
                 .ToListAsync();
 
             if (!orders.Any())
@@ -162,7 +175,8 @@ namespace BookStore.Services
                 {
                     BookId = oi.BookId,
                     Quantity = oi.Quantity,
-                    Price = oi.Price
+                    Price = oi.Price,
+                    BookTitle = oi.Book.Title
                 }).ToList()
             });
 
@@ -189,6 +203,23 @@ namespace BookStore.Services
             if (order.Status == "Cancelled")
             {
                 throw new ForbiddenException("Cannot claim a cancelled order");
+            }
+            foreach (var orderItem in order.OrderItems)
+            {
+                if (orderItem.Quantity > 0 && orderItem.Book != null)
+                {
+                    if (orderItem.Book.StockQuantity < orderItem.Quantity)
+                    {
+                        throw new ValidationException($"Not enough stock for book: {orderItem.Book.Title}");
+                    }
+
+                    orderItem.Book.StockQuantity -= orderItem.Quantity;
+
+                    if (orderItem.Book.StockQuantity == 0)
+                    {
+                        orderItem.Book.IsAvailable = false;
+                    }
+                }
             }
 
             order.Status = "Completed";

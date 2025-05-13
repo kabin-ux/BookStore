@@ -48,6 +48,8 @@ namespace BookStore.Services
                     w.Book.Title,
                     w.Book.Author,
                     w.IsAvailable,
+                    w.Book.IsStoreOnlyAccess,
+                    w.Book.StockQuantity,
                     w.DateAdded,
                     w.Book.Price,
                     w.Book.ImagePath

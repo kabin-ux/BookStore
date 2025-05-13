@@ -230,10 +230,10 @@ namespace BookStore.Services
                     .ThenInclude(oi => oi.Book)
                 .FirstOrDefaultAsync(o => o.OrderId == order.OrderId);
 
-            if (fullOrder != null)
-            {
-                await BroadCastOrderNotification(fullOrder);
-            }
+            //if (fullOrder != null)
+            //{
+            //    await BroadCastOrderNotification(fullOrder);
+            //}
 
             return new OrderResponseDTO
             {
@@ -310,21 +310,21 @@ namespace BookStore.Services
                 }
             }
         }
-        private async Task BroadCastOrderNotification(Orders order)
-        {
-            var notification = new OrderNotificationDTO
-            {
-                UserName = order.User.UserName,
-                OrderDate = order.OrderDate,
-                Items = order.OrderItems.Select(i => new OrderItemNotificationDTO
-                {
-                    BookTitle = i.Book.Title,
-                    Quantity = i.Quantity
-                }).ToList()
-            };
+        //private async Task BroadCastOrderNotification(Orders order)
+        //{
+        //    var notification = new OrderNotificationDTO
+        //    {
+        //        UserName = order.User.UserName,
+        //        OrderDate = order.OrderDate,
+        //        Items = order.OrderItems.Select(i => new OrderItemNotificationDTO
+        //        {
+        //            BookTitle = i.Book.Title,
+        //            Quantity = i.Quantity
+        //        }).ToList()
+        //    };
 
-            // Use the SendOrderNotification method of the hub
-            await _hubContext.Clients.All.ReceiveOrderNotification(notification);
-        }
+        //    // Use the SendOrderNotification method of the hub
+        //    await _hubContext.Clients.All.ReceiveOrderNotification(notification);
+        //}
     }
 }

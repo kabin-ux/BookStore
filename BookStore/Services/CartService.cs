@@ -1,5 +1,6 @@
 ﻿using BookStore.Entities;
 using BookStore.Exceptions;
+using BookStore.Helper;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookStore.Services
@@ -45,17 +46,32 @@ namespace BookStore.Services
             var cartItems = await _context.Carts
                 .Where(c => c.UserId == user.Id)
                 .Include(c => c.Book)
-                .Select(c => new
+                    .ThenInclude(b => b.Discounts)
+                .ToListAsync();
+
+            var result = cartItems.Select(c =>
+            {
+                var activeDiscount = DiscountHelper.GetActiveDiscount(c.Book.Discounts);
+
+                var finalPrice = activeDiscount != null && activeDiscount.IsOnSale
+                    ? activeDiscount.DiscountedPrice
+                    : c.Book.Price;
+
+                return new
                 {
                     c.CartId,
                     c.Book.BookId,
                     c.Book.Title,
                     c.Book.Author,
                     c.Quantity,
-                    c.Book.Price
-                }).ToListAsync();
+                    OriginalPrice = c.Book.Price,
+                    FinalPrice = finalPrice,
+                    IsOnSale = activeDiscount?.IsOnSale ?? false,
+                    DiscountPercent = activeDiscount?.DiscountPercent ?? 0
+                };
+            });
 
-            return cartItems.Cast<object>().ToList();
+            return result.Cast<object>().ToList();
         }
 
         public async Task<bool> RemoveFromCartAsync(Users user, int bookId)

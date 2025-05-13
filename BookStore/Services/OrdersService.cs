@@ -1,6 +1,7 @@
 ﻿using BookStore.DTO;
 using BookStore.Entities;
 using BookStore.Exceptions;
+using BookStore.Helper;
 using BookStore.WebSocket;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -22,9 +23,16 @@ namespace BookStore.Services
             _hubContext = hubContext;
         }
 
-        public async Task<String> CreateOrder(OrderCreateDTO orderDto, long userId, string email)
+        public async Task<string> CreateOrder(OrderCreateDTO orderDto, long userId, string email)
         {
             await ValidateItemsInCartAsync(userId, orderDto.OrderItems);
+
+            if (string.IsNullOrEmpty(email))
+                throw new ValidationException("Email address is required");
+
+            if (!IsValidEmail(email))
+                throw new ValidationException("Invalid email address format");
+
             var code = _emailService.GenerateCode();
             string discountMessage = "";
 
@@ -33,13 +41,20 @@ namespace BookStore.Services
 
             foreach (var orderItem in orderDto.OrderItems)
             {
-                var book = await _context.Books.FindAsync(orderItem.BookId);
+                var book = await _context.Books
+                    .Include(b => b.Discounts)
+                    .FirstOrDefaultAsync(b => b.BookId == orderItem.BookId);
+
                 if (book == null)
-                {
                     throw new NotFoundException($"Book with ID {orderItem.BookId} not found");
-                }
-                billAmount += (orderItem.Quantity * book.Price);
-                bookPrices[orderItem.BookId] = book.Price;
+
+                var activeDiscount = DiscountHelper.GetActiveDiscount(book.Discounts);
+                var finalPrice = activeDiscount != null && activeDiscount.IsOnSale
+                    ? activeDiscount.DiscountedPrice
+                    : book.Price;
+
+                billAmount += orderItem.Quantity * finalPrice;
+                bookPrices[orderItem.BookId] = finalPrice;
             }
 
             int totalBooks = orderDto.OrderItems.Sum(item => item.Quantity);
@@ -65,6 +80,7 @@ namespace BookStore.Services
             decimal totalDiscount = quantityDiscount + loyaltyDiscount;
             decimal finalAmount = billAmount - totalDiscount;
 
+            // Clear quantity from cart
             foreach (var orderItem in orderDto.OrderItems)
             {
                 await _cartService.RemoveQuantityFromCartAsync(userId, orderItem.BookId, orderItem.Quantity);
@@ -80,12 +96,6 @@ namespace BookStore.Services
                 FinalAmount = finalAmount,
                 UserId = userId
             };
-
-            if (string.IsNullOrEmpty(email))
-                throw new ValidationException("Email address is required");
-
-            if (!IsValidEmail(email))
-                throw new ValidationException("Invalid email address format");
 
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
@@ -106,9 +116,12 @@ namespace BookStore.Services
             {
                 responseMessage += $" {discountMessage}Total discount: Rs.{totalDiscount:F2}. Final amount: Rs.{finalAmount:F2}";
             }
+
             await _emailService.SendOrderConfirmationAsync(code, email, order.OrderId, billAmount, finalAmount);
+
             return responseMessage;
         }
+
 
         public async Task<String> CancelOrder(int orderId, long userId)
         {
@@ -217,10 +230,10 @@ namespace BookStore.Services
                     .ThenInclude(oi => oi.Book)
                 .FirstOrDefaultAsync(o => o.OrderId == order.OrderId);
 
-            if (fullOrder != null)
-            {
-                await BroadCastOrderNotification(fullOrder);
-            }
+            //if (fullOrder != null)
+            //{
+            //    await BroadCastOrderNotification(fullOrder);
+            //}
 
             return new OrderResponseDTO
             {
@@ -297,21 +310,21 @@ namespace BookStore.Services
                 }
             }
         }
-        private async Task BroadCastOrderNotification(Orders order)
-        {
-            var notification = new OrderNotificationDTO
-            {
-                UserName = order.User.UserName,
-                OrderDate = order.OrderDate,
-                Items = order.OrderItems.Select(i => new OrderItemNotificationDTO
-                {
-                    BookTitle = i.Book.Title,
-                    Quantity = i.Quantity
-                }).ToList()
-            };
+        //private async Task BroadCastOrderNotification(Orders order)
+        //{
+        //    var notification = new OrderNotificationDTO
+        //    {
+        //        UserName = order.User.UserName,
+        //        OrderDate = order.OrderDate,
+        //        Items = order.OrderItems.Select(i => new OrderItemNotificationDTO
+        //        {
+        //            BookTitle = i.Book.Title,
+        //            Quantity = i.Quantity
+        //        }).ToList()
+        //    };
 
-            // Use the SendOrderNotification method of the hub
-            await _hubContext.Clients.All.ReceiveOrderNotification(notification);
-        }
+        //    // Use the SendOrderNotification method of the hub
+        //    await _hubContext.Clients.All.ReceiveOrderNotification(notification);
+        //}
     }
 }

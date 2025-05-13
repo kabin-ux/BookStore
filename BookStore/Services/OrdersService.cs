@@ -2,7 +2,6 @@
 using BookStore.Entities;
 using BookStore.Exceptions;
 using BookStore.WebSocket;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
@@ -189,6 +188,23 @@ namespace BookStore.Services
             if (order.Status == "Cancelled")
             {
                 throw new ForbiddenException("Cannot claim a cancelled order");
+            }
+            foreach (var orderItem in order.OrderItems)
+            {
+                if (orderItem.Quantity > 0 && orderItem.Book != null)
+                {
+                    if (orderItem.Book.StockQuantity < orderItem.Quantity)
+                    {
+                        throw new ValidationException($"Not enough stock for book: {orderItem.Book.Title}");
+                    }
+
+                    orderItem.Book.StockQuantity -= orderItem.Quantity;
+
+                    if (orderItem.Book.StockQuantity == 0)
+                    {
+                        orderItem.Book.IsAvailable = false;
+                    }
+                }
             }
 
             order.Status = "Completed";

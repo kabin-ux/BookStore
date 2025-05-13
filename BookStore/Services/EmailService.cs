@@ -49,7 +49,7 @@ namespace BookStore.Services
                     Thank you for your order!
                     
                     Order ID: {orderId}
-                    Verification Code: {code}
+                    Claim Code: {code}
                     Bill Amount: Rs.{billAmount:F2}
                     Final Amount After Discount: Rs.{finalAmount:F2}
                     
@@ -61,5 +61,36 @@ namespace BookStore.Services
 
             await smtpClient.SendMailAsync(message);
         }
+        public async Task SendOrderCancellationToStaffAsync(string staffEmail, string userName, int orderId)
+        {
+
+            var host = _config["Smtp:Host"] ?? throw new InvalidOperationException("SMTP Host is not configured");
+            var portString = _config["Smtp:Port"] ?? throw new InvalidOperationException("SMTP Port is not configured");
+            var from = _config["Smtp:From"] ?? throw new InvalidOperationException("SMTP From address is not configured");
+            var username = _config["Smtp:Username"] ?? throw new InvalidOperationException("SMTP Username is not configured");
+            var password = _config["Smtp:Password"] ?? throw new InvalidOperationException("SMTP Password is not configured");
+            if (!int.TryParse(portString, out int port))
+                throw new InvalidOperationException("SMTP Port is not a valid integer");
+
+            using var smtpClient = new SmtpClient(host)
+            {
+                Port = port,
+                Credentials = new NetworkCredential(username, password),
+                EnableSsl = true,
+            };
+
+            var message = new MailMessage
+            {
+                From = new MailAddress(from),
+                Subject = "Order Cancelled by User",
+                Body = $"User '{userName}' has cancelled order #{orderId}.",
+                IsBodyHtml = false
+            };
+            message.To.Add(staffEmail);
+
+            await smtpClient.SendMailAsync(message);
+        }
+
+
     }
 }

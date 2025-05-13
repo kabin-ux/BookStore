@@ -3,6 +3,7 @@ using BookStore.Entities;
 using BookStore.Exceptions;
 using BookStore.Helper;
 using BookStore.WebSocket;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,13 +15,15 @@ namespace BookStore.Services
         private readonly IEmailService _emailService;
         private readonly ICartService _cartService;
         private readonly IHubContext<ChatHub, IChatClient> _hubContext;
+        private readonly UserManager<Users> _userManager;
 
-        public OrdersService(ApplicationDBContext context, IEmailService emailService, ICartService cartService, IHubContext<ChatHub, IChatClient> hubContext)
+        public OrdersService(ApplicationDBContext context, IEmailService emailService, ICartService cartService, IHubContext<ChatHub, IChatClient> hubContext, UserManager<Users> userManager)
         {
             _context = context;
             _emailService = emailService;
             _cartService = cartService; 
             _hubContext = hubContext;
+            _userManager = userManager;
         }
 
         public async Task<string> CreateOrder(OrderCreateDTO orderDto, long userId, string email)
@@ -125,7 +128,7 @@ namespace BookStore.Services
 
         public async Task<String> CancelOrder(int orderId, long userId)
         {
-            var order = await _context.Orders
+            var order = await _context.Orders.Include(o => o.User)
                 .FirstOrDefaultAsync(o => o.OrderId == orderId && o.UserId == userId);
 
             if (order == null)
@@ -146,8 +149,24 @@ namespace BookStore.Services
             order.Status = "Cancelled";
             await _context.SaveChangesAsync();
 
+            await NotifyStaffOnCancellation(order.User.UserName, order.OrderId);
             return "Order cancelled successfully";
         }
+        private async Task NotifyStaffOnCancellation(string userName, int orderId)
+        {
+            var staffUsers = await _userManager.GetUsersInRoleAsync("Staff");
+
+            foreach (var staff in staffUsers)
+            {
+                if (!string.IsNullOrWhiteSpace(staff.Email))
+                {
+                    await _emailService.SendOrderCancellationToStaffAsync(staff.Email, userName, orderId);
+                }
+            }
+        }
+
+
+
 
         public async Task<IEnumerable<OrderResponseDTO>> GetUserOrders(long userId)
         {

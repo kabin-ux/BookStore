@@ -49,7 +49,7 @@ namespace BookStore.Services
                     Thank you for your order!
                     
                     Order ID: {orderId}
-                    Verification Code: {code}
+                    Claim Code: {code}
                     Bill Amount: Rs.{billAmount:F2}
                     Final Amount After Discount: Rs.{finalAmount:F2}
                     

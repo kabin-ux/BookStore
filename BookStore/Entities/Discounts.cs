@@ -13,17 +13,21 @@ namespace BookStore.Entities
         public double DiscountPercent { get; set; }
 
         [Required]
+        public decimal DiscountedPrice { get; set; }
+
+        [Required]
         public DateTime StartDate { get; set; }
 
         [Required]
         public DateTime EndDate { get; set; }
 
-        [Required]
-        public bool IsOnSale { get; set; }
+        [NotMapped]
+        public bool IsOnSale => DateTime.UtcNow >= StartDate && DateTime.UtcNow <= EndDate;
 
         [Required]
         [ForeignKey("Books")]
         public int BookId { get; set; }
+        //public string BookName { }
         public virtual Books Books { get; set; }
     }
 }

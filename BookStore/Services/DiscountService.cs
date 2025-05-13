@@ -19,9 +19,17 @@ namespace BookStore.Services
             var book = await _context.Books.FindAsync(dto.BookId);
             if (book == null)
                 throw new NotFoundException("Book not found");
-            var hasActiveDiscount = book.Discounts.Any(d => d.EndDate > DateTime.UtcNow);
+            var expiredDiscounts = await _context.Discounts
+                .Where(d => d.BookId == dto.BookId && d.EndDate <= DateTime.UtcNow)
+                .ToListAsync();
+            _context.Discounts.RemoveRange(expiredDiscounts);
+            await _context.SaveChangesAsync();
+            var hasActiveDiscount = await _context.Discounts
+            .AnyAsync(d => d.BookId == dto.BookId && d.EndDate > DateTime.UtcNow);
+
             if (hasActiveDiscount)
                 throw new ConflictException("A valid discount already exists for this book");
+
 
             if (dto.DiscountPercent <= 0 || dto.DiscountPercent >= 100)
                 throw new ValidationException("Discount percent must be between 0 and 100");
